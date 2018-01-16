@@ -12,7 +12,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal">
-            <Button Name="searchButton" Content="Search" Click="searchButton_Click" />
+            <Button Name="searchButton" Content="Search" Click="SearchButton_Click" />
             <TextBox Name="searchTextBox" Width="477"/>
         </StackPanel>
         <TextBlock Grid.Row="1" Name="testTextBlock"/>
