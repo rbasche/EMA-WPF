@@ -81,61 +81,90 @@ namespace EMA_WPF
                 testTextBlock.Text = "Status is not OK";
                 return;
             }
+
             testTextBlock.Text = searchResponse.Body + "\n";
-            //"{\"station\":[60002959,60003757,60003760,60003460,60002953,60003463,60003469,61000676,60004423,60000361,60000364,61000133,61000088,60003055,60000451,60000463,60003466]}"
-            JObject searchBody = JObject.Parse(searchResponse.Body);
-            JArray idArray = (JArray)searchBody["station"];
-            if (idArray == null)
+            EMASearch emaSearch = new EMASearch();
+            emaSearch = JsonConvert.DeserializeObject<EMASearch>(searchResponse.Body);
+
+            if (emaSearch.station == null)
             {
                 testTextBlock.Text = "No stations returned";
                 return;
             }
-            int[] stationIds = idArray.Select(c => (int)c).ToArray();
+ 
+            EsiResponse stationResponse = publicEve.Universe.GetStationInfo(emaSearch.station[0]).Execute();
 
-            int stationID = stationIds[0];
-            EsiResponse stationResponse = publicEve.Universe.GetStationInfo(stationID).Execute();
-            /*"{\"station_id\":60002959,
-             * \"name\":\"Jita IV - Moon 10 - Caldari Constructions Production Plant\",
-             * \"type_id\":1529,
-             * \"position\":{\"x\":-105999360000.0,\"y\":-18516664320.0,\"z\":435947888640.0},
-             * \"system_id\":30000142,
-             * \"reprocessing_efficiency\":0.5,
-             * \"reprocessing_stations_take\":0.05,
-             * \"max_dockable_ship_volume\":50000000.0,
-             * \"office_rental_cost\":4595833.0,
-             * \"services\":
-             *  [\"bounty-missions\",
-             *   \"courier-missions\",
-             *   \"reprocessing-plant\",
-             *   \"market\",
-             *   \"repair-facilities\",
-             *   \"factory\",\"fitting\",
-             *   \"news\",
-             *   \"storage\",
-             *   \"insurance\",
-             *   \"docking\",
-             *   \"office-rental\",
-             *   \"loyalty-point-store\",
-             *   \"navy-offices\"],
-             * \"owner\":1000026,
-             * \"race_id\":1}" */
-            string stationName = ExtractName(stationResponse.Body);
-            testTextBlock.Text += stationID + " " + stationName;
+            EMAStation emaStation = new EMAStation();
+            emaStation = JsonConvert.DeserializeObject<EMAStation>(stationResponse.Body);
+            testTextBlock.Text += emaSearch.station[0] + " " + emaStation.name;
 
-            for (int i = 1; i < stationIds.Length; i++)
+            for (int i = 1; i < emaSearch.station.Count; i++)
             {
-                stationID = stationIds[i];
-                stationResponse = publicEve.Universe.GetStationInfo(stationID).Execute();
-                stationName = ExtractName(stationResponse.Body);
-                testTextBlock.Text += "\n" + stationID + " " + stationName;
+                stationResponse = publicEve.Universe.GetStationInfo(emaSearch.station[i]).Execute();
+                emaStation = JsonConvert.DeserializeObject<EMAStation>(stationResponse.Body);
+                testTextBlock.Text += "\n" + emaSearch.station[i] + " " + emaStation.name;
             }
         }
+    }
 
-        private string ExtractName(string body)
-        {
-            JObject jBody = JObject.Parse(body);
-            string name = (string)jBody.SelectToken("name");
-            return name;
-        }
+    class EMAPosition
+    {
+        public float x;
+        public float y;
+        public float z;
+    }
+    class EMAStation
+    {
+        /*"{\"station_id\":60002959,
+         * \"name\":\"Jita IV - Moon 10 - Caldari Constructions Production Plant\",
+         * \"type_id\":1529,
+         * \"position\":{\"x\":-105999360000.0,\"y\":-18516664320.0,\"z\":435947888640.0},
+         * \"system_id\":30000142,
+         * \"reprocessing_efficiency\":0.5,
+         * \"reprocessing_stations_take\":0.05,
+         * \"max_dockable_ship_volume\":50000000.0,
+         * \"office_rental_cost\":4595833.0,
+         * \"services\":
+         *  [\"bounty-missions\",
+         *   \"courier-missions\",
+         *   \"reprocessing-plant\",
+         *   \"market\",
+         *   \"repair-facilities\",
+         *   \"factory\",\"fitting\",
+         *   \"news\",
+         *   \"storage\",
+         *   \"insurance\",
+         *   \"docking\",
+         *   \"office-rental\",
+         *   \"loyalty-point-store\",
+         *   \"navy-offices\"],
+         * \"owner\":1000026,
+         * \"race_id\":1}" 
+        */
+        public int station_id;
+        public string name;
+        public int type_id;
+        public EMAPosition position;
+        public int system_id;
+        public decimal reprocessing_efficiency;
+        public decimal reprocessing_stations_take;
+        public float max_dockable_ship_volume;
+        public decimal office_rental_cost;
+        public List<string> services;
+        public int owner;
+        public int race_id;
+    }
+    class EMASearch
+    {
+        public List<int> agent;
+        public List<int> alliance;
+        public List<int> character;
+        public List<int> constellation;
+        public List<int> corporation;
+        public List<int> faction;
+        public List<int> inventory_type;
+        public List<int> region;
+        public List<int> solar_system;
+        public List<int> station;
     }
 }
