@@ -48,7 +48,7 @@ namespace EMA_WPF
 
             if (String.IsNullOrEmpty(searchTextBox.Text))
             {
-                testTextBlock.Text = "Search Field is empty";
+                statusTextBlock.Text = "Search Field is empty";
                 return;
             }
 
@@ -76,26 +76,27 @@ namespace EMA_WPF
            */
             EsiResponse searchResponse = publicEve.Search.SearchPublic(searchTextBox.Text, SearchCategory.Station).Execute();
 
-            if (searchResponse.Code != System.Net.HttpStatusCode.OK)
+           statusTextBlock.Text = String.Format("Search request finished with status code {0}", searchResponse.Code);
+           if (searchResponse.Code != System.Net.HttpStatusCode.OK)
             {
-                testTextBlock.Text = "Status is not OK";
                 return;
             }
 
-            testTextBlock.Text = searchResponse.Body + "\n";
             EMASearch emaSearch = new EMASearch();
             emaSearch = JsonConvert.DeserializeObject<EMASearch>(searchResponse.Body);
 
             if (emaSearch.station == null)
             {
-                testTextBlock.Text = "No stations returned";
+                statusTextBlock.Text += ", no stations found";
                 return;
             }
- 
+            statusTextBlock.Text += String.Format(", {0} stations found", emaSearch.station.Count);
+
             EsiResponse stationResponse = publicEve.Universe.GetStationInfo(emaSearch.station[0]).Execute();
 
             EMAStation emaStation = new EMAStation();
             emaStation = JsonConvert.DeserializeObject<EMAStation>(stationResponse.Body);
+
             testTextBlock.Text += emaSearch.station[0] + " " + emaStation.name;
 
             for (int i = 1; i < emaSearch.station.Count; i++)
