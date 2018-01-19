@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,9 +13,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+
 //using IO.Swagger.Api;
-using IO.Swagger.Client;
-using IO.Swagger.Model;
+//using IO.Swagger.Client;
+//using IO.Swagger.Model;
 using ESISharp;
 using ESISharp.Enumerations;
 using Newtonsoft.Json;
@@ -30,6 +32,7 @@ namespace EMA_WPF
         //private SearchApi searchApi;
         //private UniverseApi universeApi;
         private ESIEve.Public publicEve;
+        ObservableCollection<EMAName> emaNameList;
 
         public MainWindow()
         {
@@ -38,13 +41,12 @@ namespace EMA_WPF
             //searchApi = new SearchApi();
             //universeApi = new UniverseApi();
             publicEve = new ESIEve.Public();
-
         }
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             
-            testTextBlock.Text = "";
+            //testTextBlock.Text = "";
 
             if (String.IsNullOrEmpty(searchTextBox.Text))
             {
@@ -52,29 +54,7 @@ namespace EMA_WPF
                 return;
             }
 
-            /*
-           List<string> searchCategories = new List<string>();
-           searchCategories.Add("station");
-
-           GetSearchOk stationsList = searchApi.GetSearch(searchCategories, searchTextBox.Text);
-
-           if (stationsList.Station == null)
-           {
-           }
-
-           int? stationID = stationsList.Station[0];
-           string stationName = universeApi.GetUniverseStationsStationId(stationID).Name;
-           testTextBlock.Text += stationID + " " + stationName;
-
-           for (int i = 1; i < stationsList.Station.Count; i++)
-           {
-               stationID = stationsList.Station[i];
-               stationName = universeApi.GetUniverseStationsStationId(stationID).Name;
-               testTextBlock.Text += "\n" + stationID + " " + stationName;
-           }
-
-           */
-            EsiResponse searchResponse = publicEve.Search.SearchPublic(searchTextBox.Text, SearchCategory.Station).Execute();
+           EsiResponse searchResponse = publicEve.Search.SearchPublic(searchTextBox.Text, SearchCategory.Station).Execute();
 
            statusTextBlock.Text = String.Format("Search request finished with status code {0}", searchResponse.Code);
            if (searchResponse.Code != System.Net.HttpStatusCode.OK)
@@ -85,34 +65,32 @@ namespace EMA_WPF
             EMASearch emaSearch = new EMASearch();
             emaSearch = JsonConvert.DeserializeObject<EMASearch>(searchResponse.Body);
 
-            if (emaSearch.station == null)
+            if (emaSearch.Station == null)
             {
                 statusTextBlock.Text += ", no stations found";
                 return;
             }
-            statusTextBlock.Text += String.Format(", {0} stations found", emaSearch.station.Count);
+            statusTextBlock.Text += String.Format(", {0} stations found", emaSearch.Station.Count);
 
-            EsiResponse stationResponse = publicEve.Universe.GetStationInfo(emaSearch.station[0]).Execute();
+            EsiResponse namesResponse = publicEve.Universe.GetTypeNamesAndCategories(emaSearch.Station).Execute();
 
-            EMAStation emaStation = new EMAStation();
-            emaStation = JsonConvert.DeserializeObject<EMAStation>(stationResponse.Body);
-
-            testTextBlock.Text += emaSearch.station[0] + " " + emaStation.name;
-
-            for (int i = 1; i < emaSearch.station.Count; i++)
+            statusTextBlock.Text = String.Format("Search request finished with status code {0}", namesResponse.Code);
+            if (namesResponse.Code != System.Net.HttpStatusCode.OK)
             {
-                stationResponse = publicEve.Universe.GetStationInfo(emaSearch.station[i]).Execute();
-                emaStation = JsonConvert.DeserializeObject<EMAStation>(stationResponse.Body);
-                testTextBlock.Text += "\n" + emaSearch.station[i] + " " + emaStation.name;
+                return;
             }
+            emaNameList = new ObservableCollection<EMAName>() ;
+            emaNameList = JsonConvert.DeserializeObject<ObservableCollection<EMAName>>(namesResponse.Body);
+            stationListBox.ItemsSource = emaNameList;
+
         }
     }
 
     class EMAPosition
     {
-        public float x;
-        public float y;
-        public float z;
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
     }
     class EMAStation
     {
@@ -142,30 +120,36 @@ namespace EMA_WPF
          * \"owner\":1000026,
          * \"race_id\":1}" 
         */
-        public int station_id;
-        public string name;
-        public int type_id;
-        public EMAPosition position;
-        public int system_id;
-        public decimal reprocessing_efficiency;
-        public decimal reprocessing_stations_take;
-        public float max_dockable_ship_volume;
-        public decimal office_rental_cost;
-        public List<string> services;
-        public int owner;
-        public int race_id;
+        public int Station_id { get; set; }
+        public string Name { get; set; }
+        public int Type_id { get; set; }
+        public EMAPosition position { get; set; }
+        public int System_id { get; set; }
+        public decimal Reprocessing_efficiency { get; set; }
+        public decimal Reprocessing_stations_take { get; set; }
+        public float Max_dockable_ship_volume { get; set; }
+        public decimal Office_rental_cost { get; set; }
+        public List<string> Services { get; set; }
+        public int Owner { get; set; }
+        public int Race_id { get; set; }
     }
     class EMASearch
     {
-        public List<int> agent;
-        public List<int> alliance;
-        public List<int> character;
-        public List<int> constellation;
-        public List<int> corporation;
-        public List<int> faction;
-        public List<int> inventory_type;
-        public List<int> region;
-        public List<int> solar_system;
-        public List<int> station;
+        public List<int> Agent { get; set; }
+        public List<int> Alliance { get; set; }
+        public List<int> Character { get; set; }
+        public List<int> Constellation { get; set; }
+        public List<int> Corporation { get; set; }
+        public List<int> Faction { get; set; }
+        public List<int> Inventory_type { get; set; }
+        public List<int> Region { get; set; }
+        public List<int> Solar_system { get; set; }
+        public List<int> Station { get; set; }
+    }
+    class EMAName
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Category { get; set; }
     }
 }
