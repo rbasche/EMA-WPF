@@ -74,15 +74,16 @@ namespace EMA_WPF
 
             EsiResponse namesResponse = publicEve.Universe.GetTypeNamesAndCategories(emaSearch.Station).Execute();
 
-            statusTextBlock.Text = String.Format("Search request finished with status code {0}", namesResponse.Code);
+            statusTextBlock.Text = String.Format("Name lookup request finished with status code {0}", namesResponse.Code);
             if (namesResponse.Code != System.Net.HttpStatusCode.OK)
             {
                 return;
             }
+            statusTextBlock.Text += String.Format(", for {0} stations", namesResponse.Body.Length);
+
             emaNameList = new ObservableCollection<EMAName>() ;
             emaNameList = JsonConvert.DeserializeObject<ObservableCollection<EMAName>>(namesResponse.Body);
             stationListBox.ItemsSource = emaNameList;
-
         }
     }
 
