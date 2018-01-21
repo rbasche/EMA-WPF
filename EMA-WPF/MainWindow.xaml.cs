@@ -79,11 +79,19 @@ namespace EMA_WPF
             {
                 return;
             }
-            statusTextBlock.Text += String.Format(", for {0} stations", namesResponse.Body.Length);
 
             emaNameList = new ObservableCollection<EMAName>() ;
             emaNameList = JsonConvert.DeserializeObject<ObservableCollection<EMAName>>(namesResponse.Body);
             stationListBox.ItemsSource = emaNameList;
+            statusTextBlock.Text += String.Format(", for {0} stations", emaNameList.Count);
+        }
+
+        private void stationListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (stationListBox.SelectedItem != null)
+            {
+                selectionTextBlock.Text = ((EMAName) stationListBox.SelectedItem).Name;
+            }
         }
     }
 

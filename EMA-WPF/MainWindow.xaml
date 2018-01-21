@@ -38,7 +38,7 @@
                         <TextBlock Grid.Row="0" Grid.Column="1" Name="selectionTextBlock" VerticalAlignment="Center"/>
                     </Grid>
                     <ScrollViewer Grid.Row="2" >
-                        <ListBox Name="stationListBox">
+                        <ListBox Name="stationListBox" SelectionChanged="stationListBox_SelectionChanged">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid>
