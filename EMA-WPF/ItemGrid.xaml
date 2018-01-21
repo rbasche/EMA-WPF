@@ -22,6 +22,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Label Grid.Row="0" Grid.Column="0" Content="StationID: "/>
             <TextBox Grid.Row="0" Grid.Column="1" Name="stationIDTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
@@ -31,10 +32,26 @@
             <TextBox Grid.Row="1" Grid.Column="1" Name="regionIDTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
             <Label Grid.Row="1" Grid.Column="2" Content="Name:"/>
             <TextBox Grid.Row="1" Grid.Column="3" Name="regionNameTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+            <Button Grid.Row="2" Grid.ColumnSpan="4" Name="GetOrderButton" Content="Get Orders" HorizontalAlignment="Center" Click="GetOrderButton_Click"/>
+            
         </Grid>
         <ScrollViewer Grid.Row="1">
             <ListBox Name="itemListBox">
-                
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Order_id}" Margin="5,0,5,0"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Type_id}" Margin="5,0,5,0"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Location_id}" Margin="5,0,5,0"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+
             </ListBox>
         </ScrollViewer>
         <StatusBar Grid.Row="2">

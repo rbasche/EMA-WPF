@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -49,7 +50,32 @@ namespace EMA_WPF
         public List<int> Moons { get; set; }
     }
 
-    public class EMAOrder
+    public class User : INotifyPropertyChanged
+    {
+        private string name;
+        public string Name
+        {
+            get { return this.name; }
+            set
+            {
+                if (this.name != value)
+                {
+                    this.name = value;
+                    this.NotifyPropertyChanged("Name");
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void NotifyPropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
+        }
+    }
+
+    public class EMAOrder : INotifyPropertyChanged
     {
         /*
         {
@@ -66,7 +92,19 @@ namespace EMA_WPF
             "range": "region"
         }
         */
-        public int Order_id { get; set; }
+        private long order_id;
+        public long Order_id
+        {
+            get { return this.order_id; }
+            set
+            {
+                if (this.order_id != value)
+                {
+                    this.order_id = value;
+                    this.NotifyPropertyChanged("Order_id");
+                }
+            }
+        }
         public int Type_id { get; set; }
         public int Location_id { get; set; }
         public int Volume_total { get; set; }
@@ -77,6 +115,15 @@ namespace EMA_WPF
         public int Duration { get; set; }
         public DateTime Issued { get; set; }
         public string Range { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public void NotifyPropertyChanged(string propName)
+        {
+            if (this.PropertyChanged != null)
+                this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
+        }
+
     }
 
     public class EMAPosition
