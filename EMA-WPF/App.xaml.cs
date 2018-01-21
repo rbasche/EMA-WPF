@@ -5,6 +5,9 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using ESISharp;
+using ESISharp.Enumerations;
+using Newtonsoft.Json;
 
 namespace EMA_WPF
 {
@@ -13,5 +16,6 @@ namespace EMA_WPF
     /// </summary>
     public partial class App : Application
     {
+
     }
 }
