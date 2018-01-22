@@ -29,14 +29,15 @@ namespace EMA_WPF
     /// </summary>
     public partial class StationGrid : UserControl
     {
+        private EMASearch emaSearch;
         private ObservableCollection<EMAName> emaNameList;
         private ESIEve.Public publicEve;
 
         public StationGrid()
         {
-            InitializeComponent();
-            publicEve = new ESIEve.Public();
-
+           publicEve = new ESIEve.Public();
+           InitializeComponent();
+ 
         }
 
         private void SearchButton_Click(object sender, RoutedEventArgs e)
@@ -48,36 +49,23 @@ namespace EMA_WPF
                 return;
             }
 
-            EsiResponse searchResponse = publicEve.Search.SearchPublic(searchTextBox.Text, SearchCategory.Station).Execute();
-
-            statusTextBlock.Text = String.Format("Search request finished with status code {0}", searchResponse.Code);
-            if (searchResponse.Code != System.Net.HttpStatusCode.OK)
+            emaSearch = EmaSearch(searchTextBox.Text, SearchCategory.Station);
+ 
+            if (emaSearch == null)
             {
+                statusTextBlock.Text = "Error: No stations found";
                 return;
             }
+            statusTextBlock.Text = String.Format("Search: {0} stations found", emaSearch.Station.Count);
 
-            EMASearch emaSearch = new EMASearch();
-            emaSearch = JsonConvert.DeserializeObject<EMASearch>(searchResponse.Body);
-
-            if (emaSearch.Station == null)
+            emaNameList = GetEMANames(emaSearch.Station);
+            if (emaNameList == null)
             {
-                statusTextBlock.Text += ", no stations found";
+                statusTextBlock.Text = "Error: Name lookup failed";
                 return;
             }
-            statusTextBlock.Text += String.Format(", {0} stations found", emaSearch.Station.Count);
-
-            EsiResponse namesResponse = publicEve.Universe.GetTypeNamesAndCategories(emaSearch.Station).Execute();
-
-            //statusTextBlock.Text = String.Format("Name lookup request finished with status code {0}", namesResponse.Code);
-            if (namesResponse.Code != System.Net.HttpStatusCode.OK)
-            {
-                return;
-            }
-
-            emaNameList = new ObservableCollection<EMAName>();
-            emaNameList = JsonConvert.DeserializeObject<ObservableCollection<EMAName>>(namesResponse.Body);
             stationListBox.ItemsSource = emaNameList;
-            statusTextBlock.Text += String.Format(", for {0} stations", emaNameList.Count);
+            statusTextBlock.Text = String.Format("Name lookup: {0} stations", emaNameList.Count);
         }
 
         private void StationListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -88,11 +76,11 @@ namespace EMA_WPF
                 {
                     case "purchaseStationGrid":
                         MainWindow.purchaseStationName = ((EMAName)stationListBox.SelectedItem);
-                        MainWindow.purchaseRegion = GetRegion(MainWindow.purchaseStationName);                        
+                        MainWindow.purchaseRegion = GetEMARegion(MainWindow.purchaseStationName);                        
                         break;
                     case "sellStationGrid":
                         MainWindow.sellStationName = ((EMAName)stationListBox.SelectedItem);
-                        MainWindow.sellRegion = GetRegion(MainWindow.sellStationName);
+                        MainWindow.sellRegion = GetEMARegion(MainWindow.sellStationName);
                         break;
                     default:
                         break;
@@ -101,7 +89,34 @@ namespace EMA_WPF
             }
         }
 
-        private EMARegion GetRegion(EMAName stationName)
+        private EMASearch EmaSearch(string item, SearchCategory category)
+        {
+            EsiResponse response = publicEve.Search.SearchPublic(item, category).Execute();
+            if (response.Code != System.Net.HttpStatusCode.OK)
+            {
+                return null;
+            }
+
+            EMASearch search = new EMASearch();
+            search = JsonConvert.DeserializeObject<EMASearch>(response.Body);
+
+            return search;
+        }
+
+        private ObservableCollection<EMAName> GetEMANames(List<int> ids)
+        {
+            EsiResponse response = publicEve.Universe.GetTypeNamesAndCategories(ids).Execute();
+            if (response.Code != System.Net.HttpStatusCode.OK)
+            {
+                return null;
+            }
+
+            ObservableCollection<EMAName> collection = new ObservableCollection<EMAName>();
+            collection = JsonConvert.DeserializeObject<ObservableCollection<EMAName>>(response.Body);
+            return collection;
+        }
+
+        private EMARegion GetEMARegion(EMAName stationName)
         {
             EsiResponse esiResponse;
             EMAStation emaStation;

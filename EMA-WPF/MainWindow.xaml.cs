@@ -29,25 +29,14 @@ namespace EMA_WPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        //private SearchApi searchApi;
-        //private UniverseApi universeApi;
-        //private ESIEve.Public publicEve;
-        //private SearchApi searchApi;
-        //private UniverseApi universeApi;
-        //private ESIEve.Public publicEve;
-        //static ESIEve.Public publicEve = new ESIEve.Public();
         static public EMAName purchaseStationName, sellStationName;
         static public EMARegion purchaseRegion, sellRegion;
 
-        //public static ESIEve.Public PublicEve { get; set; }
-
         public MainWindow()
         {
-            InitializeComponent();
+           ESIEve.Public publicEve = new ESIEve.Public();
+           InitializeComponent();
 
-            //searchApi = new SearchApi();
-            //universeApi = new UniverseApi();
-            //PublicEve = new ESIEve.Public();
         }
 
         private void ItemTab_GotFocus(object sender, RoutedEventArgs e)
@@ -76,5 +65,7 @@ namespace EMA_WPF
                 sellItemGrid.regionNameTextBlock.Text = sellRegion.Name;
             }
         }
+
+
     }
 }

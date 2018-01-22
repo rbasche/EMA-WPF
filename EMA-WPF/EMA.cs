@@ -11,6 +11,13 @@ namespace EMA_WPF
     {
     }
 
+    public class EMACategory
+    {
+        public int Categroy_id { get; set; }
+        public string Name { get; set; }
+        public bool Published { get; set; }
+        public List<int> Groups { get; set; }
+    }
     public class EMAConstellation
     {
         /*
@@ -37,6 +44,15 @@ namespace EMA_WPF
         public List<int> Systems { get; set; }
     }
 
+    public class EMAGroup
+    {
+        public int Group_id { get; set; }
+        public string Name { get; set; }
+        public bool Published { get; set; }
+        public int Category { get; set; }
+        public List<int> Types { get; set; }
+    }
+
     public class EMAName
     {
         public int Id { get; set; }
@@ -48,31 +64,6 @@ namespace EMA_WPF
     {
         public int Id { get; set; }
         public List<int> Moons { get; set; }
-    }
-
-    public class User : INotifyPropertyChanged
-    {
-        private string name;
-        public string Name
-        {
-            get { return this.name; }
-            set
-            {
-                if (this.name != value)
-                {
-                    this.name = value;
-                    this.NotifyPropertyChanged("Name");
-                }
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public void NotifyPropertyChanged(string propName)
-        {
-            if (this.PropertyChanged != null)
-                this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
-        }
     }
 
     public class EMAOrder : INotifyPropertyChanged
@@ -120,8 +111,8 @@ namespace EMA_WPF
 
         public void NotifyPropertyChanged(string propName)
         {
-            if (this.PropertyChanged != null)
-                this.PropertyChanged(this, new PropertyChangedEventArgs(propName));
+            if (PropertyChanged != null)
+                PropertyChanged(this, new PropertyChangedEventArgs(propName));
         }
 
     }
@@ -248,6 +239,15 @@ namespace EMA_WPF
         public List<int> Stargates { get; set; }
         public int Star_id { get; set; }
         public string Security_class { get; set; }
+    }
+
+    public class EMAType
+    {
+        public int Type_id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public bool Published { get; set; }
+        public int Groupid { get; set; }
     }
 
 }

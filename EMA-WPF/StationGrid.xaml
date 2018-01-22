@@ -32,20 +32,14 @@
             <TextBlock Grid.Row="0" Grid.Column="1" Name="selectionTextBlock" VerticalAlignment="Center"/>
         </Grid>
         <ScrollViewer Grid.Row="2" >
-            <ListBox Name="stationListBox" SelectionChanged="StationListBox_SelectionChanged">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="3*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Id}" Margin="0,0,5,0"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Name}"/>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <ListView Name="stationListBox" SelectionChanged="StationListBox_SelectionChanged">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="ID" Width="Auto" DisplayMemberBinding="{Binding Id}"/>
+                        <GridViewColumn Header="Name" Width="Auto" DisplayMemberBinding="{Binding Name}"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
         </ScrollViewer>
         <StatusBar Grid.Row="3">
             <TextBlock Name="statusTextBlock"/>
