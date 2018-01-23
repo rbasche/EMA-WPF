@@ -29,41 +29,24 @@ namespace EMA_WPF
     /// </summary>
     public partial class MainWindow : Window
     {
-        static public EMAName purchaseStationName, sellStationName;
-        static public EMARegion purchaseRegion, sellRegion;
-
+        private EMA ema;
         public MainWindow()
         {
-           ESIEve.Public publicEve = new ESIEve.Public();
-           InitializeComponent();
-
+            InitializeComponent();
+            ema = EMA.Instance;
         }
 
         private void ItemTab_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (purchaseStationName != null)
-            {
-                purchaseItemGrid.stationIDTextBlock.Text = purchaseStationName.Id.ToString();
-                purchaseItemGrid.stationNameTextBlock.Text = purchaseStationName.Name;
-            }
+            itemGrid.purchaseStationIDTextBlock.Text = ema.PurchaseStation.Station_id.ToString();
+            itemGrid.purchaseStationNameTextBlock.Text = ema.PurchaseStation.Station_name;
+            itemGrid.purchaseRegionIDTextBlock.Text = ema.PurchaseStation.Region_id.ToString();
+            itemGrid.purchaseRegionNameTextBlock.Text = ema.PurchaseStation.Region_name;
 
-            if (purchaseRegion != null)
-            {
-                purchaseItemGrid.regionIDTextBlock.Text = purchaseRegion.Region_id.ToString();
-                purchaseItemGrid.regionNameTextBlock.Text = purchaseRegion.Name;
-
-            }
-
-            if (sellStationName != null)
-            {
-                sellItemGrid.stationIDTextBlock.Text = sellStationName.Id.ToString();
-                sellItemGrid.stationNameTextBlock.Text = sellStationName.Name;
-            }
-            if (sellRegion != null)
-            {
-                sellItemGrid.regionIDTextBlock.Text = sellRegion.Region_id.ToString();
-                sellItemGrid.regionNameTextBlock.Text = sellRegion.Name;
-            }
+            itemGrid.sellStationIDTextBlock.Text = ema.SellStation.Station_id.ToString();
+            itemGrid.sellStationNameTextBlock.Text = ema.SellStation.Station_name;
+            itemGrid.sellRegionIDTextBlock.Text = ema.SellStation.Region_id.ToString();
+            itemGrid.sellRegionNameTextBlock.Text = ema.SellStation.Region_name;
         }
 
 

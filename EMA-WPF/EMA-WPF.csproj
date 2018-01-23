@@ -64,6 +64,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Eve.cs" />
     <Compile Include="EMA.cs" />
     <Compile Include="ItemGrid.xaml.cs">
       <DependentUpon>ItemGrid.xaml</DependentUpon>

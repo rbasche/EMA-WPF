@@ -5,56 +5,74 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EMA_WPF"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300">
+             d:DesignHeight="300" d:DesignWidth="1000">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" Content="StationID: "/>
-            <TextBox Grid.Row="0" Grid.Column="1" Name="stationIDTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-            <Label Grid.Row="0" Grid.Column="2" Content="Name: "/>
-            <TextBox Grid.Row="0" Grid.Column="3" Name="stationNameTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-            <Label Grid.Row="1" Grid.Column="0" Content="RegionID:"/>
-            <TextBox Grid.Row="1" Grid.Column="1" Name="regionIDTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-            <Label Grid.Row="1" Grid.Column="2" Content="Name:"/>
-            <TextBox Grid.Row="1" Grid.Column="3" Name="regionNameTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-            <Button Grid.Row="2" Grid.ColumnSpan="4" Name="GetOrderButton" Content="Get Orders" HorizontalAlignment="Center" Click="GetOrderButton_Click"/>
-            
+            <Grid Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="5*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Purchase" HorizontalAlignment="Center"/>
+                <Label Grid.Row="1" Grid.Column="0" Content="StationID: "/>
+                <TextBox Grid.Row="1" Grid.Column="1" Name="purchaseStationIDTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+                <Label Grid.Row="1" Grid.Column="2" Content="Name: "/>
+                <TextBox Grid.Row="1" Grid.Column="3" Name="purchaseStationNameTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="RegionID:"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Name="purchaseRegionIDTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+                <Label Grid.Row="2" Grid.Column="2" Content="Name:"/>
+                <TextBox Grid.Row="2" Grid.Column="3" Name="purchaseRegionNameTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+            </Grid>
+            <Grid Grid.Column="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="5*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Sell" HorizontalAlignment="Center"/>
+                <Label Grid.Row="1" Grid.Column="0" Content="StationID: "/>
+                <TextBox Grid.Row="1" Grid.Column="1" Name="sellStationIDTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+                <Label Grid.Row="1" Grid.Column="2" Content="Name: "/>
+                <TextBox Grid.Row="1" Grid.Column="3" Name="sellStationNameTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="RegionID:"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Name="sellRegionIDTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+                <Label Grid.Row="2" Grid.Column="2" Content="Name:"/>
+                <TextBox Grid.Row="2" Grid.Column="3" Name="sellRegionNameTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
+            </Grid>
         </Grid>
-        <ScrollViewer Grid.Row="1">
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="Get Items" Click="GetItemButton_Click" Margin="5,5,5,5"/>
+            <Button Content="Get Orders" Click="GetOrderButton_Click" Margin="5,5,5,5"/>
+        </StackPanel>
+        <ScrollViewer Grid.Row="2">
             <ListBox Name="itemListBox">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Order_id}" Margin="5,0,5,0"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Type_id}" Margin="5,0,5,0"/>
-                            <TextBlock Grid.Column="2" Text="{Binding Location_id}" Margin="5,0,5,0"/>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
 
             </ListBox>
         </ScrollViewer>
-        <StatusBar Grid.Row="2">
+        <StatusBar Grid.Row="3">
             <TextBlock Name="statusTextBlock"/>
         </StatusBar>
 

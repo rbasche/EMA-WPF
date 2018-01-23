@@ -1,253 +1,210 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ESISharp;
+using ESISharp.Enumerations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
 
 namespace EMA_WPF
 {
-    class EMA
-    {
-    }
 
-    public class EMACategory
+    public sealed class EMA
     {
-        public int Categroy_id { get; set; }
-        public string Name { get; set; }
-        public bool Published { get; set; }
-        public List<int> Groups { get; set; }
-    }
-    public class EMAConstellation
-    {
-        /*
+
+        private EMA()
         {
-            "application/json": {
-            "constellation_id": 20000009,
-            "name": "Mekashtad",
-            "position": {
-                "x": 67796138757472320,
-                "y": -70591121348560960,
-                "z": -59587016159270070
-            },
-            "region_id": 10000001,
-            "systems": [
-            20000302,
-            20000303
-            ]
+            PublicEve = new ESIEve.Public();
+            SellItems = new List<EMASellItem>();
+            PurchaseStation = new EMAStation();
+            SellStation = new EMAStation();
         }
-        */
-        public int Constellation_id { get; set; }
-        public string Name { get; set; }
-        public EMAPosition Position { get; set; }
-        public int Region_id { get; set; }
-        public List<int> Systems { get; set; }
-    }
-
-    public class EMAGroup
-    {
-        public int Group_id { get; set; }
-        public string Name { get; set; }
-        public bool Published { get; set; }
-        public int Category { get; set; }
-        public List<int> Types { get; set; }
-    }
-
-    public class EMAName
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Category { get; set; }
-    }
-
-    public class EMAPlanet
-    {
-        public int Id { get; set; }
-        public List<int> Moons { get; set; }
-    }
-
-    public class EMAOrder : INotifyPropertyChanged
-    {
-        /*
+        private static readonly Lazy<EMA> lazyEMA = new Lazy<EMA>(() => new EMA());
+        public static EMA Instance
         {
-            "order_id": 5050990626,
-            "type_id": 24690,
-            "location_id": 60003760,
-            "volume_total": 10,
-            "volume_remain": 4,
-            "min_volume": 1,
-            "price": 187082695.41,
-            "is_buy_order": false,
-            "duration": 30,
-            "issued": "2018-01-20T08:20:44Z",
-            "range": "region"
-        }
-        */
-        private long order_id;
-        public long Order_id
-        {
-            get { return this.order_id; }
-            set
+            get
             {
-                if (this.order_id != value)
-                {
-                    this.order_id = value;
-                    this.NotifyPropertyChanged("Order_id");
-                }
+                return lazyEMA.Value;
             }
         }
-        public int Type_id { get; set; }
-        public int Location_id { get; set; }
-        public int Volume_total { get; set; }
-        public int Volume_remain { get; set; }
-        public int Min_volume { get; set; }
-        public decimal Price { get; set; }
-        public bool Is_buy_order { get; set; }
-        public int Duration { get; set; }
-        public DateTime Issued { get; set; }
-        public string Range { get; set; }
 
-        public event PropertyChangedEventHandler PropertyChanged;
 
-        public void NotifyPropertyChanged(string propName)
+        public EMAStation PurchaseStation { get => purchaseStation; set => purchaseStation = value; }
+        private EMAStation purchaseStation;
+
+        public EMAStation SellStation { get => sellStation; set => sellStation = value; }
+        private EMAStation sellStation;
+
+        public ESIEve.Public PublicEve { get => publicEve; set => publicEve = value; }
+        private ESIEve.Public publicEve;
+
+        public List<EMASellItem> SellItems { get => sellItems; set => sellItems = value; }
+        private List<EMASellItem> sellItems;
+
+        public List<EveName> SellItemNames { get => sellItemNames; set => sellItemNames = value; }
+        private List<EveName> sellItemNames;
+
+        public static List<EveName> GetEveNames(List<int> ids)
         {
-            if (PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(propName));
+            EMA ema = EMA.Instance;
+
+            EsiResponse response = ema.PublicEve.Universe.GetTypeNamesAndCategories(ids).Execute();
+            if (response.Code != System.Net.HttpStatusCode.OK)
+            {
+                return null;
+            }
+
+            List<EveName> list = new List<EveName>();
+            list = JsonConvert.DeserializeObject<List<EveName>>(response.Body);
+            return list;
         }
 
-    }
+        public static EveSearch Search(string item, SearchCategory category)
+        {
+            EMA ema = EMA.Instance;
 
-    public class EMAPosition
-    {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
-    }
+            EsiResponse response = ema.PublicEve.Search.SearchPublic(item, category).Execute();
+            if (response.Code != System.Net.HttpStatusCode.OK)
+            {
+                return null;
+            }
 
-    public class EMARegion
-    {
-        /*
-            "application/json": {
-            "region_id": 10000042,
-            "name": "Metropolis",
-            "description": "It has long been an established fact of civilization...",
-            "constellations": [
-                20000302,
-                20000303
-            ]
-        */
-        public int Region_id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public List<int> Constellations { get; set; }
-    }
+            EveSearch search = new EveSearch();
+            search = JsonConvert.DeserializeObject<EveSearch>(response.Body);
 
-    public class EMASearch
-    {
-        public List<int> Agent { get; set; }
-        public List<int> Alliance { get; set; }
-        public List<int> Character { get; set; }
-        public List<int> Constellation { get; set; }
-        public List<int> Corporation { get; set; }
-        public List<int> Faction { get; set; }
-        public List<int> Inventory_type { get; set; }
-        public List<int> Region { get; set; }
-        public List<int> Solar_system { get; set; }
-        public List<int> Station { get; set; }
-    }
+            return search;
+        }
+
+        public EveRegion GetEveRegion(EveName stationName)
+        {
+            EsiResponse esiResponse;
+            EveStation emaStation;
+            EveSystem emaSystem;
+            EveConstellation emaConstellation;
+            EveRegion emaRegion;
+
+            esiResponse = PublicEve.Universe.GetStationInfo(stationName.Id).Execute();
+            emaStation = JsonConvert.DeserializeObject<EveStation>(esiResponse.Body);
+            esiResponse = PublicEve.Universe.GetSystemInfo(emaStation.System_id).Execute();
+            emaSystem = JsonConvert.DeserializeObject<EveSystem>(esiResponse.Body);
+            esiResponse = PublicEve.Universe.GetConstellationInfo(emaSystem.Constellation_id).Execute();
+            emaConstellation = JsonConvert.DeserializeObject<EveConstellation>(esiResponse.Body);
+            esiResponse = PublicEve.Universe.GetRegionInfo(emaConstellation.Region_id).Execute();
+            emaRegion = JsonConvert.DeserializeObject<EveRegion>(esiResponse.Body);
+
+            return emaRegion;
+        }
+
+        private List<EveOrder> GetEveOrders(EMAStation station)
+        {
+            List<EveOrder> orderList;
+            EsiResponse response;
+
+            orderList = new List<EveOrder>();
+            if (station != null)
+            {
+                List<EveOrder> orderPage;
+                response = PublicEve.Market.GetRegionOrders(station.Region_id, null, MarketOrderType.Sell, 1).Execute();
+                int pages = response.Headers.Pages;
+                for (int page = 1; page < pages; page++)
+                {
+                    orderPage = JsonConvert.DeserializeObject<List<EveOrder>>(response.Body);
+                    orderList.AddRange(orderPage);
+                    response = PublicEve.Market.GetRegionOrders(station.Region_id, null, MarketOrderType.Sell, page + 1).Execute();
+                }
+                orderPage = JsonConvert.DeserializeObject<List<EveOrder>>(response.Body);
+                orderList.AddRange(orderPage);
+            }
+            return orderList;
+        }
+
+        public void GetItemNamesForRegions()
+        {
+            List<int> purchaseItemIDs, sellItemIDs;
+            sellItemNames.Clear();
+            EsiResponse response;
+
+            purchaseItemIDs = GetItemIDs(purchaseStation.Region_id);
+            sellItemIDs = GetItemIDs(sellStation.Region_id);
+
+            List<int> itemIDs = new List<int>();
+            
+            itemIDs.AddRange(purchaseItemIDs);
+            itemIDs = itemIDs.Intersect(sellItemIDs).ToList<int>();
+            List<int> slice = new List<int>();
+            int increment = 1000;
+            for (int i = 0; i < itemIDs.Count; i += increment)
+            {
+                slice = itemIDs.GetRange(i, Math.Min(increment, itemIDs.Count - i));
+                response = PublicEve.Universe.GetTypeNamesAndCategories(slice).Execute();
+                sellItemNames.AddRange(JsonConvert.DeserializeObject<List<EveName>>(response.Body));
+            }
+        }
+
+        private List<int> GetItemIDs(int region)
+        {
+            EsiResponse response;
+            response = PublicEve.Market.GetMarketTypes(region).Execute();
+            if (response.Code != System.Net.HttpStatusCode.OK)
+            {
+                return null;
+            }
+
+            //List<int> itemIDPage = new List<int>();
+            List<int> itemIDs = new List<int>();
+
+            int pages = response.Headers.Pages;
+            for (int page = 1; page < pages; page++)
+            {
+                itemIDs.AddRange(JsonConvert.DeserializeObject<List<int>>(response.Body).Distinct().ToList());
+                response = PublicEve.Market.GetMarketTypes(region, page + 1).Execute();
+            }
+            itemIDs.AddRange(JsonConvert.DeserializeObject<List<int>>(response.Body).Distinct().ToList());
+            itemIDs = itemIDs.Distinct().ToList();
+
+            return itemIDs;
+        }
+
+        public void GetSellItems()
+        {
+            List<EveOrder> purchaseOrder, sellorder;
+            EsiResponse response;
+
+            foreach (EveName name in sellItemNames)
+            {
+                //purchaseOrder = GetOrders(purchaseRegionID,;
+                //if (response.Code != System.Net.HttpStatusCode.OK)
+                //{
+                //    return null;
+                //}
+            }
+        }
+
+    } /* class EMA */
 
     public class EMAStation
     {
-        /*"{\"station_id\":60002959,
-         * \"name\":\"Jita IV - Moon 10 - Caldari Constructions Production Plant\",
-         * \"type_id\":1529,
-         * \"position\":{\"x\":-105999360000.0,\"y\":-18516664320.0,\"z\":435947888640.0},
-         * \"system_id\":30000142,
-         * \"reprocessing_efficiency\":0.5,
-         * \"reprocessing_stations_take\":0.05,
-         * \"max_dockable_ship_volume\":50000000.0,
-         * \"office_rental_cost\":4595833.0,
-         * \"services\":
-         *  [\"bounty-missions\",
-         *   \"courier-missions\",
-         *   \"reprocessing-plant\",
-         *   \"market\",
-         *   \"repair-facilities\",
-         *   \"factory\",\"fitting\",
-         *   \"news\",
-         *   \"storage\",
-         *   \"insurance\",
-         *   \"docking\",
-         *   \"office-rental\",
-         *   \"loyalty-point-store\",
-         *   \"navy-offices\"],
-         * \"owner\":1000026,
-         * \"race_id\":1}" 
-        */
         public int Station_id { get; set; }
-        public string Name { get; set; }
-        public int Type_id { get; set; }
-        public EMAPosition Position { get; set; }
-        public int System_id { get; set; }
-        public decimal Reprocessing_efficiency { get; set; }
-        public decimal Reprocessing_stations_take { get; set; }
-        public float Max_dockable_ship_volume { get; set; }
-        public decimal Office_rental_cost { get; set; }
-        public List<string> Services { get; set; }
-        public int Owner { get; set; }
-        public int Race_id { get; set; }
+        public string Station_name { get; set; }
+        public int Region_id { get; set; }
+        public string Region_name { get; set; }
     }
 
-    public class EMASystem
-    {
-        /*
-        {
-            "application/json": {
-            "system_id": 30000003,
-            "name": "Akpivem",
-            "position": {
-              "x": -91174141133075340,
-              "y": 43938227486247170,
-              "z": -56482824383339900
-            },
-            "security_status": 0.8462923765182495,
-            "constellation_id": 20000001,
-            "planets": [
-              {
-                "planet_id": 40000041,
-                "moons": [
-                  40000042
-                ]
-              },
-              {
-                "planet_id": 40000043
-              }
-            ],
-            "stargates": [
-              50000342
-            ],
-            "star_id": 40000040,
-            "security_class": "B"
-          }
-        */
-        public int System_id { get; set; }
-        public string Name { get; set; }
-        public EMAPosition Position { get; set; }
-        public decimal Security_Status { get; set; }
-        public int Constellation_id { get; set; }
-        public List<EMAPlanet> Planets { get; set; }
-        public List<int> Stargates { get; set; }
-        public int Star_id { get; set; }
-        public string Security_class { get; set; }
-    }
-
-    public class EMAType
+    public class EMASellItem
     {
         public int Type_id { get; set; }
         public string Name { get; set; }
-        public string Description { get; set; }
-        public bool Published { get; set; }
-        public int Groupid { get; set; }
+        public decimal Purchase_price { get; set; }
+        public int Purchase_volume { get; set; }
+        public decimal Sell_price { get; set; }
+        public int Sell_volume { get; set; }
+        public decimal Margin { get; set; }
+        public int[] Competition { get; set; }
     }
 
 }
