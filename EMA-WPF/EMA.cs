@@ -21,11 +21,13 @@ namespace EMA_WPF
         {
             PublicEve = new ESIEve.Public();
             SellItems = new List<EMASellItem>();
+            SellItems.Capacity = 10000;
+            sellItems.Capacity = 10000;
             PurchaseStation = new EMAStation();
             SellStation = new EMAStation();
             SellItemNames = new List<EveName>();
-            sellItems.Capacity = 50000;
-            sellItemNames.Capacity = 100000;
+            SellItemNames.Capacity = 200000;
+            sellItemNames.Capacity = 200000;
         }
         private static readonly Lazy<EMA> lazyEMA = new Lazy<EMA>(() => new EMA());
         public static EMA Instance
@@ -35,7 +37,6 @@ namespace EMA_WPF
                 return lazyEMA.Value;
             }
         }
-
 
         public EMAStation PurchaseStation { get => purchaseStation; set => purchaseStation = value; }
         private EMAStation purchaseStation;
@@ -134,12 +135,12 @@ namespace EMA_WPF
         {
             DateTime start = DateTime.Now;
             List<int> purchaseItemIDs, sellItemIDs;
-            sellItemNames.Clear();
+            SellItemNames.Clear();
             EsiResponse response;
 
             
-            purchaseItemIDs = GetItemIDs(purchaseStation.Region_id, progress);
-            sellItemIDs = GetItemIDs(sellStation.Region_id, progress);
+            purchaseItemIDs = GetItemIDs(PurchaseStation.Region_id, progress);
+            sellItemIDs = GetItemIDs(SellStation.Region_id, progress);
 
             List<int> itemIDs = new List<int>
             {
@@ -151,8 +152,8 @@ namespace EMA_WPF
             if (progress != null)
             {
                 progress.Report(String.Format("region {0}: {1} ids, region {2}: {3} ids, consolidated {4} ids",
-                purchaseStation.Region_id, purchaseItemIDs.Count.ToString(),
-                sellStation.Region_id, sellItemIDs.Count.ToString(),
+                PurchaseStation.Region_id, purchaseItemIDs.Count.ToString(),
+                SellStation.Region_id, sellItemIDs.Count.ToString(),
                 itemIDs.Count.ToString()));
             }
 
@@ -162,10 +163,10 @@ namespace EMA_WPF
             {
                 slice = itemIDs.GetRange(i, Math.Min(increment, itemIDs.Count - i));
                 response = PublicEve.Universe.GetTypeNamesAndCategories(slice).Execute();
-                sellItemNames.AddRange(JsonConvert.DeserializeObject<List<EveName>>(response.Body));
+                SellItemNames.AddRange(JsonConvert.DeserializeObject<List<EveName>>(response.Body));
                 if (progress != null)
                 {
-                    progress.Report(String.Format("names: {0}/{1}", sellItemNames.Count.ToString(), itemIDs.Count.ToString()));
+                    progress.Report(String.Format("names: {0}/{1}", SellItemNames.Count.ToString(), itemIDs.Count.ToString()));
                 }
 
             }
@@ -221,17 +222,22 @@ namespace EMA_WPF
             List<EveOrder> purchaseOrders, sellOrders;
  
             EMASellItem item;
-            foreach (EveName name in sellItemNames)
+            int i = 0;
+            foreach (EveName name in SellItemNames)
             {
-                purchaseOrders = GetEveOrders(purchaseStation, name);
+                purchaseOrders = GetEveOrders(PurchaseStation, name);
                 if (purchaseOrders.Count == 0)
                 {
                     //if the item is not sold in the purchase station skip it
                     continue;
                 }
-                sellOrders = GetEveOrders(sellStation, name);
+                sellOrders = GetEveOrders(SellStation, name);
                 item = FillItem(name, purchaseOrders, sellOrders);
-                sellItems.Add(item);
+                if (item.Margin < 20)
+                {
+                    continue;
+                }
+                SellItems.Add(item);
                 progress.Report(String.Format("Item {0}: {1}", item.Type_id.ToString(), item.Name));
             }
             return DateTime.Now - start;

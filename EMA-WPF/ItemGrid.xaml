@@ -76,10 +76,6 @@
                         <GridViewColumn Header="Purchase" Width="Auto" DisplayMemberBinding="{Binding Purchase_price}"/>
                         <GridViewColumn Header="Sell" Width="Auto" DisplayMemberBinding="{Binding Sell_price}"/>
                         <GridViewColumn Header="Margin" Width="Auto" DisplayMemberBinding="{Binding Margin}"/>
-                        <GridViewColumn Header="1 H" Width="Auto" DisplayMemberBinding="{Binding Competition[0]}"/>
-                        <GridViewColumn Header="3 H" Width="Auto" DisplayMemberBinding="{Binding Competition[1]}"/>
-                        <GridViewColumn Header="1 D" Width="Auto" DisplayMemberBinding="{Binding Competition[2]}"/>
-                        <GridViewColumn Header="3 D" Width="Auto" DisplayMemberBinding="{Binding Competition[3]}"/>
                     </GridView>
                 </ListView.View>
             </ListView>

@@ -27,17 +27,19 @@ namespace EMA_WPF
     public partial class ItemGrid : UserControl
     {
         private EMA ema;
+        private ObservableCollection<EMASellItem> mySellItems;
 
         public ItemGrid()
         {
             InitializeComponent();
             ema = EMA.Instance;
+            mySellItems = new ObservableCollection<EMASellItem>();
 
         }
 
         private async void GetItemButton_Click(object sender, RoutedEventArgs e)
         {
-            itemListView.ItemsSource = ema.SellItems;
+            itemListView.ItemsSource = mySellItems;
             var progressHandler = new Progress<string>(value =>
             {
                 this.statusTextBlock.Text = String.Format("Get Item: {0}",value);
@@ -54,11 +56,10 @@ namespace EMA_WPF
 
         private async void GetOrderButton_Click(object sender, RoutedEventArgs e)
         {
-            itemListView.ItemsSource = ema.SellItems;
             var progressHandler = new Progress<string>(value =>
             {
                 this.statusTextBlock.Text = String.Format("Get Item: {0}", value);
-                this.itemListView.ItemsSource = ema.SellItems;
+                mySellItems.Add(ema.SellItems.Last());
             });
             var progress = progressHandler as IProgress<string>;
 
@@ -68,7 +69,7 @@ namespace EMA_WPF
                 return ema.GetSellItems(progress);
             });
             this.statusTextBlock.Text = String.Format("finished: Get Orders, {0}", elapsed);
-            itemListView.ItemsSource = ema.SellItems;
+            //itemListView.ItemsSource = ema.SellItems;
         }
 
     }
