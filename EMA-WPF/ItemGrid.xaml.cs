@@ -35,26 +35,41 @@ namespace EMA_WPF
 
         }
 
-        private void GetItemButton_Click(object sender, RoutedEventArgs e)
+        private async void GetItemButton_Click(object sender, RoutedEventArgs e)
         {
-            List<EveName> itemNames = new List<EveName>();
-            DateTime start = DateTime.Now;
-            ema.GetItemNamesForRegions();
-            TimeSpan elapsed = DateTime.Now - start;
+            itemListView.ItemsSource = ema.SellItems;
+            var progressHandler = new Progress<string>(value =>
+            {
+                this.statusTextBlock.Text = String.Format("Get Item: {0}",value);
+            });
+            var progress = progressHandler as IProgress<string>;
 
-            this.statusTextBlock.Text = String.Format("finished: {0} items, time elapsed {1}", itemNames.Count, elapsed);
+            this.statusTextBlock.Text = "starting: Get Items";
+            TimeSpan elapsed = await Task<TimeSpan>.Run(() =>
+            {               
+                return ema.GetItemNamesForRegions(progress);
+            });
+            this.statusTextBlock.Text = String.Format("finished: Get Items, {0}",elapsed);
         }
 
-        private void GetOrderButton_Click(object sender, RoutedEventArgs e)
+        private async void GetOrderButton_Click(object sender, RoutedEventArgs e)
         {
-            DateTime start = DateTime.Now;
-            ema.GetSellItems();
-            TimeSpan elapsed = DateTime.Now - start;
-            itemListBox.ItemsSource = ema.SellItems;
+            itemListView.ItemsSource = ema.SellItems;
+            var progressHandler = new Progress<string>(value =>
+            {
+                this.statusTextBlock.Text = String.Format("Get Item: {0}", value);
+                this.itemListView.ItemsSource = ema.SellItems;
+            });
+            var progress = progressHandler as IProgress<string>;
 
-            this.statusTextBlock.Text = String.Format("finished: {0} items, time elapsed {1}", ema.SellItems.Count, elapsed);
-
-
+            this.statusTextBlock.Text = "starting: Get Orders";
+            TimeSpan elapsed = await Task<TimeSpan>.Run(() =>
+            {
+                return ema.GetSellItems(progress);
+            });
+            this.statusTextBlock.Text = String.Format("finished: Get Orders, {0}", elapsed);
+            itemListView.ItemsSource = ema.SellItems;
         }
+
     }
 }

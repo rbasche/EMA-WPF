@@ -68,9 +68,21 @@
             <Button Content="Get Orders" Click="GetOrderButton_Click" Margin="5,5,5,5"/>
         </StackPanel>
         <ScrollViewer Grid.Row="2">
-            <ListBox Name="itemListBox">
-
-            </ListBox>
+            <ListView Name="itemListView" >
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="ID" Width="Auto" DisplayMemberBinding="{Binding Type_id}"/>
+                        <GridViewColumn Header="Name" Width="Auto" DisplayMemberBinding="{Binding Name}"/>
+                        <GridViewColumn Header="Purchase" Width="Auto" DisplayMemberBinding="{Binding Purchase_price}"/>
+                        <GridViewColumn Header="Sell" Width="Auto" DisplayMemberBinding="{Binding Sell_price}"/>
+                        <GridViewColumn Header="Margin" Width="Auto" DisplayMemberBinding="{Binding Margin}"/>
+                        <GridViewColumn Header="1 H" Width="Auto" DisplayMemberBinding="{Binding Competition[0]}"/>
+                        <GridViewColumn Header="3 H" Width="Auto" DisplayMemberBinding="{Binding Competition[1]}"/>
+                        <GridViewColumn Header="1 D" Width="Auto" DisplayMemberBinding="{Binding Competition[2]}"/>
+                        <GridViewColumn Header="3 D" Width="Auto" DisplayMemberBinding="{Binding Competition[3]}"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
         </ScrollViewer>
         <StatusBar Grid.Row="3">
             <TextBlock Name="statusTextBlock"/>
