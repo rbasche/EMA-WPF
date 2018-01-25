@@ -68,12 +68,17 @@ namespace EMA_WPF
         {
             orderButton.IsEnabled = false;
             itemListView.ItemsSource = mySellItems;
-            var progressHandler = new Progress<string>(value =>
+            var progressHandler = new Progress<EMAProgress>(value =>
             {
-                this.statusTextBlock.Text = String.Format("Get Item: {0}", value);
-                mySellItems.Add(ema.SellItems.Last());
+                this.statusTextBlock.Text = String.Format("Get Orders: sell item {0}", value.Message);
+                //mySellItems.Add(ema.SellItems.Last());
+                //mySellItems.Clear();
+                if (value.IsNewItem)
+                {
+                    mySellItems.Add(value.Item);
+                }
             });
-            var progress = progressHandler as IProgress<string>;
+            var progress = progressHandler as IProgress<EMAProgress>;
 
             this.statusTextBlock.Text = "starting: Get Orders";
             string message = await Task<TimeSpan>.Run(() =>
@@ -81,15 +86,21 @@ namespace EMA_WPF
                 try
                 {
                     return ema.GetSellItems(progress);
+                    //return ema.GetSellItemsByName(progress);
                 }
                 catch (Exception ex)
                 {
-                    String exceptionMessage = String.Format(" --> Exception {0}< --", ex.Message);
+                    string exceptionMessage = String.Format(" --> Exception {0}< --", ex.Message);
                     return exceptionMessage;
                 }
             });
+            
+            foreach (EMASellItem item in ema.SellItems)
+            {
+                if (!mySellItems.Contains(item)) mySellItems.Add(item);
+            }
             this.statusTextBlock.Text += message;
-            orderButton.IsEnabled = false;
+            orderButton.IsEnabled = true;
         }
 
     }
