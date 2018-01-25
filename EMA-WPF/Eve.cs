@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IO.Swagger.Client;
+using IO.Swagger.Model;
 
 namespace EMA_WPF
 {
@@ -53,12 +55,12 @@ namespace EMA_WPF
         public List<int> Types { get; set; }
     }
 
-    public class EveName
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string Category { get; set; }
-    }
+    //public class EveName
+    //{
+    //    public int? Id { get; set; }
+    //    public string Name { get; set; }
+    //    public PostUniverseNames200Ok.CategoryEnum Category { get; set; }
+    //}
 
     public class EvePlanet
     {
@@ -123,16 +125,16 @@ namespace EMA_WPF
 
     public class EveSearch
     {
-        public List<int> Agent { get; set; }
-        public List<int> Alliance { get; set; }
-        public List<int> Character { get; set; }
-        public List<int> Constellation { get; set; }
-        public List<int> Corporation { get; set; }
-        public List<int> Faction { get; set; }
-        public List<int> Inventory_type { get; set; }
-        public List<int> Region { get; set; }
-        public List<int> Solar_system { get; set; }
-        public List<int> Station { get; set; }
+        public List<int?> Agent { get; set; }
+        public List<int?> Alliance { get; set; }
+        public List<int?> Character { get; set; }
+        public List<int?> Constellation { get; set; }
+        public List<int?> Corporation { get; set; }
+        public List<int?> Faction { get; set; }
+        public List<int?> Inventory_type { get; set; }
+        public List<int?> Region { get; set; }
+        public List<int?> Solar_system { get; set; }
+        public List<int?> Station { get; set; }
     }
 
     public class EveStation

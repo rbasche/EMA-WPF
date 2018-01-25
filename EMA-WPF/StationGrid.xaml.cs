@@ -14,9 +14,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-//using IO.Swagger.Api;
-//using IO.Swagger.Client;
-//using IO.Swagger.Model;
+using IO.Swagger.Api;
+using IO.Swagger.Client;
+using IO.Swagger.Model;
 using ESISharp;
 using ESISharp.Enumerations;
 using Newtonsoft.Json;
@@ -30,7 +30,7 @@ namespace EMA_WPF
     public partial class StationGrid : UserControl
     {
         private EveSearch stationSearch;
-        private List<EveName> stationNameList;
+        private List<PostUniverseNames200Ok> stationNameList;
         private EMA ema;
 
         public StationGrid()
@@ -48,7 +48,8 @@ namespace EMA_WPF
                 return;
             }
 
-            stationSearch = EMA.Search(searchTextBox.Text, SearchCategory.Station);
+            List<string> categories = new List<string>(1) { "station" };
+            stationSearch = EMA.Search(searchTextBox.Text, categories);
  
             if (stationSearch == null)
             {
@@ -86,11 +87,11 @@ namespace EMA_WPF
                         station = null;
                         break;
                 }
-                station.Station_id = ((EveName)stationListBox.SelectedItem).Id;
-                station.Station_name = ((EveName)stationListBox.SelectedItem).Name;
-                station.Region_id = ema.GetEveRegion((EveName)stationListBox.SelectedItem).Region_id;
-                station.Region_name = ema.GetEveRegion((EveName)stationListBox.SelectedItem).Name;
-                selectionTextBlock.Text = ((EveName)stationListBox.SelectedItem).Name;
+                station.Station_id = (int)((PostUniverseNames200Ok)stationListBox.SelectedItem).Id;
+                station.Station_name = ((PostUniverseNames200Ok)stationListBox.SelectedItem).Name;
+                station.Region_id = (int)ema.GetEveRegion((PostUniverseNames200Ok)stationListBox.SelectedItem).RegionId;
+                station.Region_name = ema.GetEveRegion((PostUniverseNames200Ok)stationListBox.SelectedItem).Name;
+                selectionTextBlock.Text = ((PostUniverseNames200Ok)stationListBox.SelectedItem).Name;
             }
         }
 

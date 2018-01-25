@@ -3,40 +3,60 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+
 using ESISharp;
 using ESISharp.Enumerations;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+using IO.Swagger.Api;
+using IO.Swagger.Model;
+using IO.Swagger.Client;
 
 namespace EMA_WPF
 {
 
-    public sealed class EMA
+    public sealed class Singleton
     {
+        private static readonly Singleton instance = new Singleton();
 
-        private EMA()
+        // Explicit static constructor to tell C# compiler
+        // not to mark type as beforefieldinit
+        static Singleton()
         {
-            PublicEve = new ESIEve.Public();
-            SellItems = new List<EMASellItem>();
-            SellItems.Capacity = 10000;
-            sellItems.Capacity = 10000;
-            PurchaseStation = new EMAStation();
-            SellStation = new EMAStation();
-            SellItemNames = new List<EveName>();
-            SellItemNames.Capacity = 200000;
-            sellItemNames.Capacity = 200000;
         }
-        private static readonly Lazy<EMA> lazyEMA = new Lazy<EMA>(() => new EMA());
-        public static EMA Instance
+
+        private Singleton()
+        {
+        }
+
+        public static Singleton Instance
         {
             get
             {
-                return lazyEMA.Value;
+                return instance;
             }
         }
+    }
+    public sealed class EMA
+    {
+
+        private static readonly EMA instance = new EMA();
+
+        private static SearchApi searchApi = new SearchApi();
+        private static UniverseApi universeApi = new UniverseApi();
+        private static MarketApi marketApi = new MarketApi();
+        private static ESIEve.Public publicEve = new ESIEve.Public();
+
+
+        public SearchApi SearchApi { get => searchApi; }
+        public UniverseApi UniverseApi { get => universeApi; }
+        public MarketApi MarketApi { get => marketApi; }
+        public ESIEve.Public PublicEve { get => publicEve; }
 
         public EMAStation PurchaseStation { get => purchaseStation; set => purchaseStation = value; }
         private EMAStation purchaseStation;
@@ -44,30 +64,55 @@ namespace EMA_WPF
         public EMAStation SellStation { get => sellStation; set => sellStation = value; }
         private EMAStation sellStation;
 
-        public ESIEve.Public PublicEve { get => publicEve; set => publicEve = value; }
-        private ESIEve.Public publicEve;
-
         public List<EMASellItem> SellItems { get => sellItems; set => sellItems = value; }
         private List<EMASellItem> sellItems;
 
-        public List<EveName> SellItemNames { get => sellItemNames; set => sellItemNames = value; }
-        private List<EveName> sellItemNames;
+        public List<PostUniverseNames200Ok> SellItemNames { get => sellItemNames; set => sellItemNames = value; }
+        private List<PostUniverseNames200Ok> sellItemNames;
 
-        public static List<EveName> GetEveNames(List<int> ids)
+        static EMA()
+        {
+        }
+
+        private EMA()
+        {
+            ESIEve.Public PublicEve = new ESIEve.Public();
+
+            SellItems = new List<EMASellItem>
+            {
+                Capacity = 10000
+            };
+            PurchaseStation = new EMAStation();
+            SellStation = new EMAStation();
+            SellItemNames = new List<PostUniverseNames200Ok>
+            {
+                Capacity = 200000
+            };
+
+        }
+        public static EMA Instance
+        {
+            get
+            {
+                return instance;
+            }
+        }
+
+
+        public static EveSearch Search(string item, List<string> categories)
         {
             EMA ema = EMA.Instance;
 
-            EsiResponse response = ema.PublicEve.Universe.GetTypeNamesAndCategories(ids).Execute();
-            if (response.Code != System.Net.HttpStatusCode.OK)
+            ApiResponse<GetSearchOk> response = ema.SearchApi.GetSearchWithHttpInfo(categories, item);
+
+            EveSearch search = new EveSearch
             {
-                return null;
-            }
+                Station = response.Data.Station
+            };
+            //search = JsonConvert.DeserializeObject<EveSearch>(data.ToString());
 
-            List<EveName> list = new List<EveName>();
-            list = JsonConvert.DeserializeObject<List<EveName>>(response.Body);
-            return list;
+            return search;
         }
-
         public static EveSearch Search(string item, SearchCategory category)
         {
             EMA ema = EMA.Instance;
@@ -84,125 +129,135 @@ namespace EMA_WPF
             return search;
         }
 
-        public EveRegion GetEveRegion(EveName stationName)
+
+        public static List<PostUniverseNames200Ok> GetEveNames(List<int?> ids)
         {
-            EsiResponse esiResponse;
-            EveStation emaStation;
-            EveSystem emaSystem;
-            EveConstellation emaConstellation;
-            EveRegion emaRegion;
+            EMA ema = EMA.Instance;
 
-            esiResponse = PublicEve.Universe.GetStationInfo(stationName.Id).Execute();
-            emaStation = JsonConvert.DeserializeObject<EveStation>(esiResponse.Body);
-            esiResponse = PublicEve.Universe.GetSystemInfo(emaStation.System_id).Execute();
-            emaSystem = JsonConvert.DeserializeObject<EveSystem>(esiResponse.Body);
-            esiResponse = PublicEve.Universe.GetConstellationInfo(emaSystem.Constellation_id).Execute();
-            emaConstellation = JsonConvert.DeserializeObject<EveConstellation>(esiResponse.Body);
-            esiResponse = PublicEve.Universe.GetRegionInfo(emaConstellation.Region_id).Execute();
-            emaRegion = JsonConvert.DeserializeObject<EveRegion>(esiResponse.Body);
+            //EsiResponse response = ema.PublicEve.Universe.GetTypeNamesAndCategories(ids).Execute();
+            ema.UniverseApi.PostUniverseNamesWithHttpInfo(ids);
+            ApiResponse<List<PostUniverseNames200Ok>> response = ema.UniverseApi.PostUniverseNamesWithHttpInfo(ids);
+            if (!response.StatusCode.Equals((int)HttpStatusCode.OK))
+            {
+                return null;
+            }
 
-            return emaRegion;
+            
+            //list = JsonConvert.DeserializeObject<List<EveName>>(response.Body);
+            return response.Data;
         }
 
-        private List<EveOrder> GetEveOrders(EMAStation station,EveName name)
-        {
-            List<EveOrder> orderList;
-            EsiResponse response;
 
-            orderList = new List<EveOrder>();
+        public GetUniverseRegionsRegionIdOk GetEveRegion(PostUniverseNames200Ok stationName)
+        {
+            ApiResponse<GetUniverseStationsStationIdOk> stationResponse = UniverseApi.GetUniverseStationsStationIdWithHttpInfo(stationName.Id);
+            ApiResponse<GetUniverseSystemsSystemIdOk> systemResponse = UniverseApi.GetUniverseSystemsSystemIdWithHttpInfo(stationResponse.Data.SystemId);
+            ApiResponse<GetUniverseConstellationsConstellationIdOk> constellationResponse = UniverseApi.GetUniverseConstellationsConstellationIdWithHttpInfo(systemResponse.Data.ConstellationId);
+            ApiResponse<GetUniverseRegionsRegionIdOk> regionResponse = UniverseApi.GetUniverseRegionsRegionIdWithHttpInfo(constellationResponse.Data.RegionId);
+            return regionResponse.Data;
+        }
+
+        private List<GetMarketsRegionIdOrders200Ok> GetEveOrders(EMAStation station, PostUniverseNames200Ok name)
+        {
+            List<GetMarketsRegionIdOrders200Ok> orderList;
+            ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
+
+            orderList = new List<GetMarketsRegionIdOrders200Ok>();
             if (station != null)
             {
-                List<EveOrder> orderPage;
-                response = PublicEve.Market.GetRegionOrders(station.Region_id, name.Id, MarketOrderType.Sell).Execute();
-                int pages = response.Headers.Pages;
+                List<GetMarketsRegionIdOrders200Ok> orderPage;
+                response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id,null,1,name.Id);
+                //response = PublicEve.Market.GetRegionOrders(station.Region_id, name.Id, MarketOrderType.Sell).Execute();
+                int pages = int.Parse(response.Headers["X-Pages"]);
                 for (int page = 1; page < pages; page++)
                 {
-                    orderPage = JsonConvert.DeserializeObject<List<EveOrder>>(response.Body);
+                    orderPage = response.Data;
                     orderList.AddRange(orderPage);
-                    response = PublicEve.Market.GetRegionOrders(station.Region_id, name.Id, MarketOrderType.Sell, page + 1).Execute();
+                    response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id,null,page+1,name.Id);
                 }
-                orderPage = JsonConvert.DeserializeObject<List<EveOrder>>(response.Body);
+                orderPage = response.Data;
                 orderList.AddRange(orderPage);
             }
             return orderList;
         }
 
-        public TimeSpan GetItemNamesForRegions()
+        public string GetItemNamesForRegions()
         {
             return GetItemNamesForRegions(null);
         }
-        public TimeSpan GetItemNamesForRegions(IProgress<string> progress)
+        public string GetItemNamesForRegions(IProgress<string> progress)
         {
             DateTime start = DateTime.Now;
-            List<int> purchaseItemIDs, sellItemIDs;
+            List<int?> purchaseItemIDs, sellItemIDs;
             SellItemNames.Clear();
-            EsiResponse response;
 
             
             purchaseItemIDs = GetItemIDs(PurchaseStation.Region_id, progress);
             sellItemIDs = GetItemIDs(SellStation.Region_id, progress);
 
-            List<int> itemIDs = new List<int>
+            List<int?> itemIDs = new List<int?>
             {
                 Capacity = 50000
             };
 
             itemIDs.AddRange(purchaseItemIDs);
-            itemIDs = itemIDs.Intersect(sellItemIDs).ToList<int>();
+            itemIDs = itemIDs.Intersect(sellItemIDs).ToList();
             if (progress != null)
             {
                 progress.Report(String.Format("region {0}: {1} ids, region {2}: {3} ids, consolidated {4} ids",
-                PurchaseStation.Region_id, purchaseItemIDs.Count.ToString(),
-                SellStation.Region_id, sellItemIDs.Count.ToString(),
-                itemIDs.Count.ToString()));
+                    PurchaseStation.Region_id, purchaseItemIDs.Count.ToString(),
+                    SellStation.Region_id, sellItemIDs.Count.ToString(),
+                    itemIDs.Count.ToString()));
             }
 
-            List<int> slice = new List<int>();
+            List<int?> slice = new List<int?>();
+            ApiResponse<List<PostUniverseNames200Ok>> response;
             int increment = 1000;
             for (int i = 0; i < itemIDs.Count; i += increment)
             {
                 slice = itemIDs.GetRange(i, Math.Min(increment, itemIDs.Count - i));
-                response = PublicEve.Universe.GetTypeNamesAndCategories(slice).Execute();
-                SellItemNames.AddRange(JsonConvert.DeserializeObject<List<EveName>>(response.Body));
+                response = UniverseApi.PostUniverseNamesWithHttpInfo(slice);
+                SellItemNames.AddRange(response.Data);
+                //SellItemNames.AddRange(JsonConvert.DeserializeObject<List<EveName>>(response.Body));
                 if (progress != null)
                 {
                     progress.Report(String.Format("names: {0}/{1}", SellItemNames.Count.ToString(), itemIDs.Count.ToString()));
                 }
 
             }
-            return DateTime.Now - start;
+            return String.Format(" finished, time elapsed: {0}", DateTime.Now - start);
         }
 
-        private List<int> GetItemIDs(int region)
+        private List<int?> GetItemIDs(int region)
         {
             return GetItemIDs(region, null);
         }
-        private List<int> GetItemIDs(int region,IProgress<string> progress)
+        private List<int?> GetItemIDs(int region,IProgress<string> progress)
         {
-            EsiResponse response;
-            response = PublicEve.Market.GetMarketTypes(region).Execute();
-            if (response.Code != System.Net.HttpStatusCode.OK)
+            ApiResponse<List<int?>> response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region); 
+            //response = PublicEve.Market.GetMarketTypes(region).Execute();
+            if (!response.StatusCode.Equals((int)HttpStatusCode.OK))
             {
                 return null;
             }
 
             //List<int> itemIDPage = new List<int>();
-            List<int> itemIDs = new List<int>
+            List<int?> itemIDs = new List<int?>
             {
                 Capacity = 100000
             };
 
-            int pages = response.Headers.Pages;
+            int pages = int.Parse(response.Headers["X-Pages"]);
             for (int page = 1; page < pages; page++)
             {
-                itemIDs.AddRange(JsonConvert.DeserializeObject<List<int>>(response.Body).Distinct().ToList());
+                itemIDs.AddRange(response.Data);
                 if (progress != null)
                 {
                     progress.Report(String.Format("region {0}: ids {1}", region.ToString(), itemIDs.Count.ToString()));
                 }
-                response = PublicEve.Market.GetMarketTypes(region, page + 1).Execute();
+                response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region,null,page+1);
             }
-            itemIDs.AddRange(JsonConvert.DeserializeObject<List<int>>(response.Body).Distinct().ToList());
+            itemIDs.AddRange(response.Data);
             itemIDs = itemIDs.Distinct().ToList();
 
             if (progress != null)
@@ -212,18 +267,17 @@ namespace EMA_WPF
             return itemIDs;
         }
 
-        public TimeSpan GetSellItems()
+        public string GetSellItems()
         {
             return GetSellItems(null);
         }
-        public TimeSpan GetSellItems(IProgress<string> progress)
+        public string GetSellItems(IProgress<string> progress)
         {
             DateTime start = DateTime.Now;
-            List<EveOrder> purchaseOrders, sellOrders;
+            List<GetMarketsRegionIdOrders200Ok> purchaseOrders, sellOrders;
  
             EMASellItem item;
-            int i = 0;
-            foreach (EveName name in SellItemNames)
+            foreach (PostUniverseNames200Ok name in SellItemNames)
             {
                 purchaseOrders = GetEveOrders(PurchaseStation, name);
                 if (purchaseOrders.Count == 0)
@@ -240,10 +294,10 @@ namespace EMA_WPF
                 SellItems.Add(item);
                 progress.Report(String.Format("Item {0}: {1}", item.Type_id.ToString(), item.Name));
             }
-            return DateTime.Now - start;
+            return String.Format(" finished, time elapsed: {0}",DateTime.Now - start);
         }
 
-        private EMASellItem FillItem(EveName name, List<EveOrder> pOrders, List<EveOrder> sOrders)
+        private EMASellItem FillItem(PostUniverseNames200Ok name, List<GetMarketsRegionIdOrders200Ok> pOrders, List<GetMarketsRegionIdOrders200Ok> sOrders)
         {
             EMASellItem item = new EMASellItem();
             DateTime now = DateTime.Now;
@@ -251,17 +305,18 @@ namespace EMA_WPF
 
             TimeSpan activeFor = new TimeSpan();
             item.Name = name.Name;
-            item.Type_id = name.Id;
-            foreach (EveOrder oItem in pOrders)
+            item.Type_id = (int)name.Id;
+            foreach (GetMarketsRegionIdOrders200Ok oItem in pOrders)
             {
-                item.Purchase_price = Math.Max(item.Purchase_price, oItem.Price);
+                item.Purchase_price = Math.Max(item.Purchase_price, (double)oItem.Price);
             }
 
-            foreach (EveOrder sItem in sOrders)
+            item.Competition[4] = sOrders.Count;
+            foreach (GetMarketsRegionIdOrders200Ok sItem in sOrders)
             {
-                activeFor = now - sItem.Issued;
-                item.Sell_price = Math.Max(item.Sell_price, sItem.Price);
-                activeFor = now - sItem.Issued;
+                activeFor = now - (DateTime)sItem.Issued;
+                item.Sell_price = Math.Max(item.Sell_price, (double)sItem.Price);
+                activeFor = now - (DateTime)sItem.Issued;
                 for (int i = 0; i < 4; i++)
                 {
                     if (activeFor <= timeSpan[i]) item.Competition[i]++;
@@ -273,13 +328,14 @@ namespace EMA_WPF
             }
             else
             {
-                item.Margin = 100*Decimal.Round((item.Sell_price-item.Purchase_price)/item.Sell_price,2);
+                item.Margin = Decimal.Round(100*(decimal)((item.Sell_price-item.Purchase_price)/item.Sell_price),0);
             }
             
             return item;
         }
 
     } /* class EMA */
+
 
     public class EMAStation
     {
@@ -293,9 +349,9 @@ namespace EMA_WPF
     {
         private int _type_id;
         private string _name;
-        private decimal _purchase_price;
+        private double _purchase_price;
         private int _purchase_volume;
-        private decimal _sell_price;
+        private double _sell_price;
         private int _sell_volume;
         private decimal _margin;
         private int[] _competition;
@@ -309,14 +365,14 @@ namespace EMA_WPF
             _sell_price = 0;
             _sell_volume = 0;
             _margin = 0;
-            _competition = new int[] { 0, 0, 0, 0 };
+            _competition = new int[] { 0, 0, 0, 0, 0 };
         }
 
         public int Type_id { get => _type_id; set => _type_id = value; }
         public string Name { get => _name; set => _name = value; }
-        public decimal Purchase_price { get => _purchase_price; set => _purchase_price = value; }
+        public double Purchase_price { get => _purchase_price; set => _purchase_price = value; }
         public int Purchase_volume { get => _purchase_volume; set => _purchase_volume = value; }
-        public decimal Sell_price { get => _sell_price; set => _sell_price = value; }
+        public double Sell_price { get => _sell_price; set => _sell_price = value; }
         public int Sell_volume { get => _sell_volume; set => _sell_volume = value; }
         public decimal Margin { get => _margin; set => _margin = value; }
         public int[] Competition { get => _competition; set => _competition = value; }

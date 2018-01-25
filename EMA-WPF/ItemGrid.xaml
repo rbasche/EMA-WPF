@@ -64,18 +64,23 @@
             </Grid>
         </Grid>
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button Content="Get Items" Click="GetItemButton_Click" Margin="5,5,5,5"/>
-            <Button Content="Get Orders" Click="GetOrderButton_Click" Margin="5,5,5,5"/>
+            <Button Name="itemButton" Content="Get Items" Click="GetItemButton_Click" Margin="5,5,5,5"/>
+            <Button Name="orderButton" Content="Get Orders" Click="GetOrderButton_Click" Margin="5,5,5,5"/>
         </StackPanel>
         <ScrollViewer Grid.Row="2">
             <ListView Name="itemListView" >
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="ID" Width="Auto" DisplayMemberBinding="{Binding Type_id}"/>
-                        <GridViewColumn Header="Name" Width="Auto" DisplayMemberBinding="{Binding Name}"/>
-                        <GridViewColumn Header="Purchase" Width="Auto" DisplayMemberBinding="{Binding Purchase_price}"/>
-                        <GridViewColumn Header="Sell" Width="Auto" DisplayMemberBinding="{Binding Sell_price}"/>
-                        <GridViewColumn Header="Margin" Width="Auto" DisplayMemberBinding="{Binding Margin}"/>
+                        <GridViewColumn Header="ID" Width="50" DisplayMemberBinding="{Binding Type_id}"/>
+                        <GridViewColumn Header="Name" Width="350" DisplayMemberBinding="{Binding Name}"/>
+                        <GridViewColumn Header="Purchase" Width="100" DisplayMemberBinding="{Binding Purchase_price}"/>
+                        <GridViewColumn Header="Sell" Width="100" DisplayMemberBinding="{Binding Sell_price}"/>
+                        <GridViewColumn Header="Margin" Width="50" DisplayMemberBinding="{Binding Margin}"/>
+                        <GridViewColumn Header=" 1h " Width="50" DisplayMemberBinding="{Binding Competition[0]}"/>
+                        <GridViewColumn Header=" 3h " Width="50" DisplayMemberBinding="{Binding Competition[1]}"/>
+                        <GridViewColumn Header=" 1d " Width="50" DisplayMemberBinding="{Binding Competition[2]}"/>
+                        <GridViewColumn Header=" 3d " Width="50" DisplayMemberBinding="{Binding Competition[3]}"/>
+                        <GridViewColumn Header="all" Width="50" DisplayMemberBinding="{Binding Competition[4]}"/>
                     </GridView>
                 </ListView.View>
             </ListView>

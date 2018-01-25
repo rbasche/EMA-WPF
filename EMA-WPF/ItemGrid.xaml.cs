@@ -39,6 +39,7 @@ namespace EMA_WPF
 
         private async void GetItemButton_Click(object sender, RoutedEventArgs e)
         {
+            itemButton.IsEnabled = false;
             itemListView.ItemsSource = mySellItems;
             var progressHandler = new Progress<string>(value =>
             {
@@ -47,15 +48,26 @@ namespace EMA_WPF
             var progress = progressHandler as IProgress<string>;
 
             this.statusTextBlock.Text = "starting: Get Items";
-            TimeSpan elapsed = await Task<TimeSpan>.Run(() =>
-            {               
-                return ema.GetItemNamesForRegions(progress);
+            string message = await Task<TimeSpan>.Run(() =>
+            {
+                try
+                {
+                    return ema.GetItemNamesForRegions(progress);
+                }
+                catch (Exception ex)
+                {
+                    String exceptionMessage = String.Format(" -->Exception {0}<--", ex.Message);
+                    return exceptionMessage;
+                }
             });
-            this.statusTextBlock.Text = String.Format("finished: Get Items, {0}",elapsed);
+            this.statusTextBlock.Text += message;
+            itemButton.IsEnabled = true;
         }
 
         private async void GetOrderButton_Click(object sender, RoutedEventArgs e)
         {
+            orderButton.IsEnabled = false;
+            itemListView.ItemsSource = mySellItems;
             var progressHandler = new Progress<string>(value =>
             {
                 this.statusTextBlock.Text = String.Format("Get Item: {0}", value);
@@ -64,12 +76,20 @@ namespace EMA_WPF
             var progress = progressHandler as IProgress<string>;
 
             this.statusTextBlock.Text = "starting: Get Orders";
-            TimeSpan elapsed = await Task<TimeSpan>.Run(() =>
+            string message = await Task<TimeSpan>.Run(() =>
             {
-                return ema.GetSellItems(progress);
+                try
+                {
+                    return ema.GetSellItems(progress);
+                }
+                catch (Exception ex)
+                {
+                    String exceptionMessage = String.Format(" --> Exception {0}< --", ex.Message);
+                    return exceptionMessage;
+                }
             });
-            this.statusTextBlock.Text = String.Format("finished: Get Orders, {0}", elapsed);
-            //itemListView.ItemsSource = ema.SellItems;
+            this.statusTextBlock.Text += message;
+            orderButton.IsEnabled = false;
         }
 
     }
