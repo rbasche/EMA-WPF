@@ -16,6 +16,7 @@ using Newtonsoft.Json.Linq;
 using IO.Swagger.Api;
 using IO.Swagger.Model;
 using IO.Swagger.Client;
+using System.Threading;
 
 namespace EMA_WPF
 {
@@ -157,7 +158,7 @@ namespace EMA_WPF
             return regionResponse.Data;
         }
 
-        private List<GetMarketsRegionIdOrders200Ok> GetEveOrders(EMAStation station, PostUniverseNames200Ok name)
+        private List<GetMarketsRegionIdOrders200Ok> GetEveOrders(EMAStation station, PostUniverseNames200Ok name, IProgress<string> progress)
         {
             List<GetMarketsRegionIdOrders200Ok> orderList;
             ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
@@ -166,19 +167,45 @@ namespace EMA_WPF
             if (station != null)
             {
                 List<GetMarketsRegionIdOrders200Ok> orderPage;
-                response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id,null,1,name.Id);
+                response = GetMarketOrdersHelper(station.Region_id, 1, name.Id, progress);
+                //response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id, null, 1, name.Id);
                 //response = PublicEve.Market.GetRegionOrders(station.Region_id, name.Id, MarketOrderType.Sell).Execute();
                 int pages = int.Parse(response.Headers["X-Pages"]);
                 for (int page = 1; page < pages; page++)
                 {
                     orderPage = response.Data;
                     orderList.AddRange(orderPage);
-                    response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id,null,page+1,name.Id);
+                    response = GetMarketOrdersHelper(station.Region_id, page, name.Id, progress);
+                    //response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id,null,page+1,name.Id);
                 }
                 orderPage = response.Data;
                 orderList.AddRange(orderPage);
             }
             return orderList;
+        }
+
+        private ApiResponse<List<GetMarketsRegionIdOrders200Ok>> GetMarketOrdersHelper(int regionid, int page, int? nameid, IProgress<string> progress)
+        {
+            int retry = 0;
+            ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
+            try
+            {
+                response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", regionid, null, page, nameid);
+
+            }
+            catch (IO.Swagger.Client.ApiException ex)
+            {
+                retry++;
+                if (retry < 4)
+                {
+                    progress.Report(String.Format(" -->GetMarketOrders: {0} retry {1}, region {2}, item {3}, page{4}", ex.Message, retry, regionid, nameid, page));
+                    Thread.Sleep(500); //wait some time before retrying
+                    response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", regionid, null, page, nameid);
+                    return response;
+                }
+                throw;
+            }
+            return response;
         }
 
         public string GetItemNamesForRegions()
@@ -279,25 +306,28 @@ namespace EMA_WPF
             EMASellItem item;
             foreach (PostUniverseNames200Ok name in SellItemNames)
             {
-                purchaseOrders = GetEveOrders(PurchaseStation, name);
+                purchaseOrders = GetEveOrders(PurchaseStation, name, progress);
                 if (purchaseOrders.Count == 0)
                 {
-                    //if the item is not sold in the purchase station skip it
+                    //if the item is not sold in the region of purchase station skip it
                     continue;
                 }
-                sellOrders = GetEveOrders(SellStation, name);
-                item = FillItem(name, purchaseOrders, sellOrders);
-                if (item.Margin < 20)
+                sellOrders = GetEveOrders(SellStation, name, progress);
+                item = FillItem(PurchaseStation.Station_id, SellStation.Station_id, name, purchaseOrders, sellOrders);
+                if (item != null)
                 {
-                    continue;
+                    if (item.Margin < 20)
+                    {
+                        continue;
+                    }
+                    SellItems.Add(item);
+                    progress.Report(String.Format("{0}: Item {1}: {2}",SellItems.Count, item.Type_id.ToString(), item.Name));
                 }
-                SellItems.Add(item);
-                progress.Report(String.Format("Item {0}: {1}", item.Type_id.ToString(), item.Name));
             }
             return String.Format(" finished, time elapsed: {0}",DateTime.Now - start);
         }
 
-        private EMASellItem FillItem(PostUniverseNames200Ok name, List<GetMarketsRegionIdOrders200Ok> pOrders, List<GetMarketsRegionIdOrders200Ok> sOrders)
+        private EMASellItem FillItem(int pStation, int sStation, PostUniverseNames200Ok name, List<GetMarketsRegionIdOrders200Ok> pOrders, List<GetMarketsRegionIdOrders200Ok> sOrders)
         {
             EMASellItem item = new EMASellItem();
             DateTime now = DateTime.Now;
@@ -306,20 +336,32 @@ namespace EMA_WPF
             TimeSpan activeFor = new TimeSpan();
             item.Name = name.Name;
             item.Type_id = (int)name.Id;
-            foreach (GetMarketsRegionIdOrders200Ok oItem in pOrders)
+            foreach (GetMarketsRegionIdOrders200Ok order in pOrders)
             {
-                item.Purchase_price = Math.Max(item.Purchase_price, (double)oItem.Price);
+                if (order.LocationId == pStation)
+                {
+                    item.Purchase_price = Math.Max(item.Purchase_price, (double)order.Price);
+                }
+            }
+            if (item.Purchase_price == 0) //not sold in purchase station
+            {
+                return null;
             }
 
-            item.Competition[4] = sOrders.Count;
-            foreach (GetMarketsRegionIdOrders200Ok sItem in sOrders)
+            item.Competition[4] = 0; // overall number of competitors
+            foreach (GetMarketsRegionIdOrders200Ok order in sOrders)
             {
-                activeFor = now - (DateTime)sItem.Issued;
-                item.Sell_price = Math.Max(item.Sell_price, (double)sItem.Price);
-                activeFor = now - (DateTime)sItem.Issued;
-                for (int i = 0; i < 4; i++)
+                if (order.LocationId == sStation)
                 {
-                    if (activeFor <= timeSpan[i]) item.Competition[i]++;
+                    item.Competition[4]++;
+                    activeFor = now - (DateTime)order.Issued;
+                    item.Sell_price = Math.Max(item.Sell_price, (double)order.Price);
+                    activeFor = now - (DateTime)order.Issued;
+                    for (int i = 0; i < 4; i++)
+                    {
+                        if (activeFor <= timeSpan[i]) item.Competition[i]++;
+                    }
+
                 }
             }
             if (item.Sell_price == 0)

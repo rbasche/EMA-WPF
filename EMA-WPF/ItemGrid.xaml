@@ -71,7 +71,7 @@
             <ListView Name="itemListView" >
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="ID" Width="50" DisplayMemberBinding="{Binding Type_id}"/>
+                        <GridViewColumn Header="ID" Width="50" DisplayMemberBinding="{Binding Type_id}" />
                         <GridViewColumn Header="Name" Width="350" DisplayMemberBinding="{Binding Name}"/>
                         <GridViewColumn Header="Purchase" Width="100" DisplayMemberBinding="{Binding Purchase_price}"/>
                         <GridViewColumn Header="Sell" Width="100" DisplayMemberBinding="{Binding Sell_price}"/>
