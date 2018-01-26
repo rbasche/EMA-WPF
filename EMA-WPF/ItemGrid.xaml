@@ -110,7 +110,6 @@
             </Border>
         </Grid>
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button Name="itemButton" Content="Get Items" Click="GetItemButton_Click" Margin="5,5,5,5"/>
             <Button Name="orderButton" Content="Get Orders" Click="GetOrderButton_Click" Margin="5,5,5,5"/>
         </StackPanel>
         <DataGrid Name="itemListView" Grid.Row="2" IsReadOnly="True" AutoGenerateColumns="False">

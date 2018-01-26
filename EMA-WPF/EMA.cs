@@ -53,7 +53,6 @@ namespace EMA_WPF
         private static MarketApi marketApi = new MarketApi();
         private static ESIEve.Public publicEve = new ESIEve.Public();
 
-
         public SearchApi SearchApi { get => searchApi; }
         public UniverseApi UniverseApi { get => universeApi; }
         public MarketApi MarketApi { get => marketApi; }
@@ -70,6 +69,9 @@ namespace EMA_WPF
 
         public List<PostUniverseNames200Ok> SellItemNames { get => sellItemNames; set => sellItemNames = value; }
         private List<PostUniverseNames200Ok> sellItemNames;
+
+        private int retrydelay = 400;
+        public int RetryDelay{ get => retrydelay; set => retrydelay = value; }
 
         static EMA()
         {
@@ -217,6 +219,7 @@ namespace EMA_WPF
 
         private ApiResponse<List<GetMarketsRegionIdOrders200Ok>> GetMarketOrdersHelper(int regionid, int page, int? nameid, IProgress<EMAProgress> progress)
         {
+            EMA ema = EMA.Instance;
             int retry = 0;
             ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
             try
@@ -237,7 +240,7 @@ namespace EMA_WPF
                     {
                         progress.Report(new EMAProgress(String.Format(" -->GetMarketOrders: {0} retry {1}, region {2}, item {3}, page{4}", ex.Message, retry, regionid, nameid, page)));
                     }
-                    Thread.Sleep(300); //wait some time before retrying
+                    Thread.Sleep(ema.RetryDelay); //wait some time before retrying
                     response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", regionid, null, page, nameid);
                     return response;
                 }
@@ -298,6 +301,7 @@ namespace EMA_WPF
         }
         private List<int?> GetItemIDs(int region,IProgress<string> progress)
         {
+            EMA ema = EMA.Instance;
             List<int?> itemIDs = new List<int?>
             {
                 Capacity = 100000
@@ -348,7 +352,7 @@ namespace EMA_WPF
                         {
                             progress.Report(String.Format("region {0}: ids {1}, -->Exception {2}, retrying", region.ToString(), itemIDs.Count.ToString(),ex.Message));
                         }
-                        Thread.Sleep(300); //wait some time before retrying
+                        Thread.Sleep(ema.RetryDelay); //wait some time before retrying
                         _response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region, null, _page);
                         return _response;
                     }
@@ -491,8 +495,8 @@ namespace EMA_WPF
             catch (IO.Swagger.Client.ApiException ex)
             {
                 retry++;
-                if (retry > 4) throw;
-                Thread.Sleep(300);
+                if (retry > 10) throw;
+                Thread.Sleep(ema.RetryDelay);
                 response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.SellStation.Region_id, item.Type_id);
             }
             historyData = response.Data.FindAll(fillItemHistoryHelper1);
@@ -506,8 +510,8 @@ namespace EMA_WPF
             catch (IO.Swagger.Client.ApiException ex)
             {
                 retry++;
-                if (retry > 4) throw;
-                Thread.Sleep(300);
+                if (retry > 10) throw;
+                Thread.Sleep(ema.RetryDelay);
                 response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.PurchaseStation.Region_id, item.Type_id);
 
             }
