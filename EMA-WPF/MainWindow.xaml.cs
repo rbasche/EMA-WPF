@@ -38,15 +38,15 @@ namespace EMA_WPF
 
         private void ItemTab_GotFocus(object sender, RoutedEventArgs e)
         {
-            itemGrid.purchaseStationIDTextBlock.Text = ema.PurchaseStation.Station_id.ToString();
-            itemGrid.purchaseStationNameTextBlock.Text = ema.PurchaseStation.Station_name;
-            itemGrid.purchaseRegionIDTextBlock.Text = ema.PurchaseStation.Region_id.ToString();
-            itemGrid.purchaseRegionNameTextBlock.Text = ema.PurchaseStation.Region_name;
+            itemGrid.purchaseStationIDTextBox.Text = ema.PurchaseStation.Station_id.ToString();
+            itemGrid.purchaseStationNameTextBox.Text = ema.PurchaseStation.Station_name;
+            itemGrid.purchaseRegionIDTextBox.Text = ema.PurchaseStation.Region_id.ToString();
+            itemGrid.purchaseRegionNameTextBox.Text = ema.PurchaseStation.Region_name;
 
-            itemGrid.sellStationIDTextBlock.Text = ema.SellStation.Station_id.ToString();
-            itemGrid.sellStationNameTextBlock.Text = ema.SellStation.Station_name;
-            itemGrid.sellRegionIDTextBlock.Text = ema.SellStation.Region_id.ToString();
-            itemGrid.sellRegionNameTextBlock.Text = ema.SellStation.Region_name;
+            itemGrid.sellStationIDTextBox.Text = ema.SellStation.Station_id.ToString();
+            itemGrid.sellStationNameTextBox.Text = ema.SellStation.Station_name;
+            itemGrid.sellRegionIDTextBox.Text = ema.SellStation.Region_id.ToString();
+            itemGrid.sellRegionNameTextBox.Text = ema.SellStation.Region_name;
         }
 
 

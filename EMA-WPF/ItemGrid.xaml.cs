@@ -40,6 +40,7 @@ namespace EMA_WPF
         private async void GetItemButton_Click(object sender, RoutedEventArgs e)
         {
             itemButton.IsEnabled = false;
+            orderButton.IsEnabled = false;
             itemListView.ItemsSource = mySellItems;
             var progressHandler = new Progress<string>(value =>
             {
@@ -62,11 +63,13 @@ namespace EMA_WPF
             });
             this.statusTextBlock.Text += message;
             itemButton.IsEnabled = true;
+            orderButton.IsEnabled = true;
         }
 
         private async void GetOrderButton_Click(object sender, RoutedEventArgs e)
         {
             orderButton.IsEnabled = false;
+            itemButton.IsEnabled = false;
             itemListView.ItemsSource = mySellItems;
             var progressHandler = new Progress<EMAProgress>(value =>
             {
@@ -101,6 +104,7 @@ namespace EMA_WPF
             }
             this.statusTextBlock.Text += message;
             orderButton.IsEnabled = true;
+            itemButton.IsEnabled = true;
         }
 
     }

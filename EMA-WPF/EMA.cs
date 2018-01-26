@@ -467,11 +467,11 @@ namespace EMA_WPF
             }
             if (item.Sell_price == 0)
             {
-                item.Margin = 1000;
+                item.Margin = 10;
             }
             else
             {
-                item.Margin = Decimal.Round(100*(decimal)((item.Sell_price-item.Purchase_price)/item.Sell_price),0);
+                item.Margin = (decimal)((item.Sell_price-item.Purchase_price)/item.Sell_price);
             }
             
             return item;

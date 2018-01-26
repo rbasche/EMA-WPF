@@ -9,7 +9,6 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <TabControl Grid.Row="0" Name="mainWindowTab">
             <TabItem Header="Stations" Name="stationTab">
@@ -31,8 +30,6 @@
                 </Grid>
             </TabItem>
         </TabControl> <!-- MainWindowTab -->
-        <StatusBar Grid.Row="1">
-            <TextBlock Name="statusTextBlock"/>
-        </StatusBar>
+
     </Grid>
 </Window>

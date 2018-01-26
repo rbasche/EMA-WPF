@@ -5,7 +5,20 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:EMA_WPF"
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="1000">
+             d:DesignHeight="300" d:DesignWidth="1200">
+    <UserControl.Resources>
+        <Style x:Key="stations" TargetType="TextBox">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="AllowDrop"  Value="False"/>
+        </Style>
+        <Style x:Key="prices" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Right"/>
+        </Style>
+        <DataTemplate x:Key="sellItemTemplate">
+                <TextBlock Text="{Binding}" TextAlignment="Right"/>
+        </DataTemplate>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -18,73 +31,78 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="5*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Purchase" HorizontalAlignment="Center"/>
-                <Label Grid.Row="1" Grid.Column="0" Content="StationID: "/>
-                <TextBox Grid.Row="1" Grid.Column="1" Name="purchaseStationIDTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-                <Label Grid.Row="1" Grid.Column="2" Content="Name: "/>
-                <TextBox Grid.Row="1" Grid.Column="3" Name="purchaseStationNameTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-                <Label Grid.Row="2" Grid.Column="0" Content="RegionID:"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Name="purchaseRegionIDTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-                <Label Grid.Row="2" Grid.Column="2" Content="Name:"/>
-                <TextBox Grid.Row="2" Grid.Column="3" Name="purchaseRegionNameTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-            </Grid>
-            <Grid Grid.Column="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="5*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Sell" HorizontalAlignment="Center"/>
-                <Label Grid.Row="1" Grid.Column="0" Content="StationID: "/>
-                <TextBox Grid.Row="1" Grid.Column="1" Name="sellStationIDTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-                <Label Grid.Row="1" Grid.Column="2" Content="Name: "/>
-                <TextBox Grid.Row="1" Grid.Column="3" Name="sellStationNameTextBlock" VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-                <Label Grid.Row="2" Grid.Column="0" Content="RegionID:"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Name="sellRegionIDTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-                <Label Grid.Row="2" Grid.Column="2" Content="Name:"/>
-                <TextBox Grid.Row="2" Grid.Column="3" Name="sellRegionNameTextBlock"  VerticalAlignment="Center" IsReadOnly="True" AllowDrop="False"/>
-            </Grid>
+            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="2">
+                <Grid >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="5*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Purchase" HorizontalAlignment="Center"/>
+                    <Label Grid.Row="1" Grid.Column="0" Content="StationID: "/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Name="purchaseStationIDTextBox" Style="{StaticResource stations}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Content="Name: "/>
+                    <TextBox Grid.Row="1" Grid.Column="3" Name="purchaseStationNameTextBox" Style="{StaticResource stations}" Margin="0,0,5,0"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="RegionID:"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" Name="purchaseRegionIDTextBox" Style="{StaticResource stations}"/>
+                    <Label Grid.Row="2" Grid.Column="2" Content="Name:"/>
+                    <TextBox Grid.Row="2" Grid.Column="3" Name="purchaseRegionNameTextBox" Style="{StaticResource stations}" Margin="0,0,5,0"/>
+                </Grid>
+            </Border>
+            <Border Grid.Column="1" BorderBrush="Gray" BorderThickness="2">
+                <Grid >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="5*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Sell" HorizontalAlignment="Center"/>
+                    <Label Grid.Row="1" Grid.Column="0" Content="StationID: "/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Name="sellStationIDTextBox" Style="{StaticResource stations}"/>
+                    <Label Grid.Row="1" Grid.Column="2" Content="Name: "/>
+                    <TextBox Grid.Row="1" Grid.Column="3" Name="sellStationNameTextBox" Style="{StaticResource stations}" Margin="0,0,5,0"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="RegionID:"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" Name="sellRegionIDTextBox" Style="{StaticResource stations}"/>
+                    <Label Grid.Row="2" Grid.Column="2" Content="Name:"/>
+                    <TextBox Grid.Row="2" Grid.Column="3" Name="sellRegionNameTextBox" Style="{StaticResource stations}" Margin="0,0,5,0"/>
+                </Grid>
+            </Border>
         </Grid>
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
             <Button Name="itemButton" Content="Get Items" Click="GetItemButton_Click" Margin="5,5,5,5"/>
             <Button Name="orderButton" Content="Get Orders" Click="GetOrderButton_Click" Margin="5,5,5,5"/>
         </StackPanel>
-        <ScrollViewer Grid.Row="2">
-            <ListView Name="itemListView" >
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="ID" Width="50" DisplayMemberBinding="{Binding Type_id}" />
-                        <GridViewColumn Header="Name" Width="350" DisplayMemberBinding="{Binding Name}"/>
-                        <GridViewColumn Header="Purchase" Width="100" DisplayMemberBinding="{Binding Purchase_price}"/>
-                        <GridViewColumn Header="Sell" Width="100" DisplayMemberBinding="{Binding Sell_price}"/>
-                        <GridViewColumn Header="Margin" Width="50" DisplayMemberBinding="{Binding Margin}"/>
-                        <GridViewColumn Header=" 1h " Width="50" DisplayMemberBinding="{Binding Competition[0]}"/>
-                        <GridViewColumn Header=" 3h " Width="50" DisplayMemberBinding="{Binding Competition[1]}"/>
-                        <GridViewColumn Header=" 1d " Width="50" DisplayMemberBinding="{Binding Competition[2]}"/>
-                        <GridViewColumn Header=" 3d " Width="50" DisplayMemberBinding="{Binding Competition[3]}"/>
-                        <GridViewColumn Header="all" Width="50" DisplayMemberBinding="{Binding Competition[4]}"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-        </ScrollViewer>
+        <ListView Name="itemListView" Grid.Row="2" ItemTemplate="{StaticResource sellItemTemplate}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="ID" Width="50" DisplayMemberBinding="{Binding Type_id}"/>
+                    <GridViewColumn Header="Name" Width="350" DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="Purchase" Width="100" DisplayMemberBinding="{Binding Purchase_price, StringFormat={}{0:N2}}"/>
+                    <GridViewColumn Header="Sell" Width="100" DisplayMemberBinding="{Binding Sell_price, StringFormat={}{0:N2}}"/>
+                    <GridViewColumn Header="Margin" Width="100" DisplayMemberBinding="{Binding Margin, StringFormat={}{0:P2}}"/>
+                    <GridViewColumn Header=" 1h " Width="50" DisplayMemberBinding="{Binding Competition[0]}"/>
+                    <GridViewColumn Header=" 3h " Width="50" DisplayMemberBinding="{Binding Competition[1]}"/>
+                    <GridViewColumn Header=" 1d " Width="50" DisplayMemberBinding="{Binding Competition[2]}"/>
+                    <GridViewColumn Header=" 3d " Width="50" DisplayMemberBinding="{Binding Competition[3]}"/>
+                    <GridViewColumn Header="all" Width="50" DisplayMemberBinding="{Binding Competition[4]}"/>
+                    <GridViewColumn Header="V. Purch." Width="50" DisplayMemberBinding="{Binding Competition[4]}"/>
+                    <GridViewColumn Header="V. Sell" Width="50" DisplayMemberBinding="{Binding Competition[4]}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+        <!-- </ScrollViewer> -->
         <StatusBar Grid.Row="3">
             <TextBlock Name="statusTextBlock"/>
         </StatusBar>

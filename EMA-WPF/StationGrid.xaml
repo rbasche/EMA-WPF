@@ -6,43 +6,45 @@
              xmlns:local="clr-namespace:EMA_WPF"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" Content="Station: "/>
-            <TextBox Grid.Row="0" Grid.Column="1" Name="searchTextBox" VerticalContentAlignment="Center" />
-            <Button Grid.Row="0" Grid.Column="2" Name="searchButton" Content="Search" Click="SearchButton_Click" />
+    <Border BorderBrush="Gray" BorderThickness="2">
+        <Grid Margin="5,5,5,5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="Station: "/>
+                <TextBox Grid.Row="0" Grid.Column="1" Name="searchTextBox" VerticalContentAlignment="Center" />
+                <Button Grid.Row="0" Grid.Column="2" Name="searchButton" Content="Search" Click="SearchButton_Click" Margin="5,0,0,0"/>
+            </Grid>
+            <Grid Grid.Row="1" Margin="0,5,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="Selection:" Margin="0,0,5,0"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Name="selectionTextBlock" VerticalAlignment="Center"/>
+            </Grid>
+            <ScrollViewer Grid.Row="2" >
+                <ListView Name="stationListBox" SelectionChanged="StationListBox_SelectionChanged">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="ID" Width="Auto" DisplayMemberBinding="{Binding Id}"/>
+                            <GridViewColumn Header="Name" Width="Auto" DisplayMemberBinding="{Binding Name}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </ScrollViewer>
+            <StatusBar Grid.Row="3">
+                <TextBlock Name="statusTextBlock"/>
+            </StatusBar>
         </Grid>
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" Content="Selection: "/>
-            <TextBlock Grid.Row="0" Grid.Column="1" Name="selectionTextBlock" VerticalAlignment="Center"/>
-        </Grid>
-        <ScrollViewer Grid.Row="2" >
-            <ListView Name="stationListBox" SelectionChanged="StationListBox_SelectionChanged">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="ID" Width="Auto" DisplayMemberBinding="{Binding Id}"/>
-                        <GridViewColumn Header="Name" Width="Auto" DisplayMemberBinding="{Binding Name}"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-        </ScrollViewer>
-        <StatusBar Grid.Row="3">
-            <TextBlock Name="statusTextBlock"/>
-        </StatusBar>
-    </Grid>
+    </Border>
 </UserControl>
