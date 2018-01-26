@@ -79,13 +79,17 @@ namespace EMA_WPF
         {
             ESIEve.Public PublicEve = new ESIEve.Public();
 
-            SellItems = new List<EMASellItem>();
+            SellItems = new List<EMASellItem>
+            {
+                Capacity = 20000
+            };
             PurchaseStation = new EMAStation();
             SellStation = new EMAStation();
             SellItemNames = new List<PostUniverseNames200Ok>
             {
-                Capacity = 200000
+                Capacity = 20000
             };
+            int timeout = IO.Swagger.Client.Configuration.Default.Timeout;
 
         }
         public static EMA Instance
@@ -133,7 +137,6 @@ namespace EMA_WPF
             EMA ema = EMA.Instance;
 
             //EsiResponse response = ema.PublicEve.Universe.GetTypeNamesAndCategories(ids).Execute();
-            ema.UniverseApi.PostUniverseNamesWithHttpInfo(ids);
             ApiResponse<List<PostUniverseNames200Ok>> response = ema.UniverseApi.PostUniverseNamesWithHttpInfo(ids);
             if (!response.StatusCode.Equals((int)HttpStatusCode.OK))
             {
@@ -160,7 +163,10 @@ namespace EMA_WPF
             List<GetMarketsRegionIdOrders200Ok> orderList;
             ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
 
-            orderList = new List<GetMarketsRegionIdOrders200Ok>();
+            orderList = new List<GetMarketsRegionIdOrders200Ok>
+            {
+                Capacity = 100000
+            };
             if (station != null)
             {
                 List<GetMarketsRegionIdOrders200Ok> orderPage;
@@ -185,7 +191,10 @@ namespace EMA_WPF
             List<GetMarketsRegionIdOrders200Ok> orderList;
             ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
 
-            orderList = new List<GetMarketsRegionIdOrders200Ok>();
+            orderList = new List<GetMarketsRegionIdOrders200Ok>
+            {
+                Capacity = 100000
+            };
             if (station != null)
             {
                 List<GetMarketsRegionIdOrders200Ok> orderPage;
@@ -228,7 +237,7 @@ namespace EMA_WPF
                     {
                         progress.Report(new EMAProgress(String.Format(" -->GetMarketOrders: {0} retry {1}, region {2}, item {3}, page{4}", ex.Message, retry, regionid, nameid, page)));
                     }
-                    Thread.Sleep(500); //wait some time before retrying
+                    Thread.Sleep(300); //wait some time before retrying
                     response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", regionid, null, page, nameid);
                     return response;
                 }
@@ -339,7 +348,7 @@ namespace EMA_WPF
                         {
                             progress.Report(String.Format("region {0}: ids {1}, -->Exception {2}, retrying", region.ToString(), itemIDs.Count.ToString(),ex.Message));
                         }
-                        Thread.Sleep(500); //wait some time before retrying
+                        Thread.Sleep(300); //wait some time before retrying
                         _response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region, null, _page);
                         return _response;
                     }
@@ -432,6 +441,8 @@ namespace EMA_WPF
 
         private EMASellItem FillItem(int pStation, int sStation, PostUniverseNames200Ok name, List<GetMarketsRegionIdOrders200Ok> pOrders, List<GetMarketsRegionIdOrders200Ok> sOrders)
         {
+            EMA ema = EMA.Instance;
+
             EMASellItem item = new EMASellItem();
             DateTime now = DateTime.Now.ToUniversalTime();
             TimeSpan[] timeSpan = new TimeSpan[] { TimeSpan.FromHours(1), TimeSpan.FromHours(3), TimeSpan.FromHours(24), TimeSpan.FromDays(3) };
@@ -443,10 +454,10 @@ namespace EMA_WPF
             {
                 if (order.LocationId == pStation)
                 {
-                    item.Purchase_price = Math.Max(item.Purchase_price, (double)order.Price);
+                    item.Purchase_price = Math.Min(item.Purchase_price, (double)order.Price);
                 }
             }
-            if (item.Purchase_price == 0) //not sold in purchase station
+            if (item.Purchase_price == Double.MaxValue) //not sold in purchase station
             {
                 return null;
             }
@@ -458,23 +469,69 @@ namespace EMA_WPF
                 {
                     item.Competition[4]++;
                     activeFor = now - (DateTime)order.Issued;
-                    item.Sell_price = Math.Max(item.Sell_price, (double)order.Price);
+                    item.Sell_price = Math.Min(item.Sell_price, (double)order.Price);
                     for (int i = 0; i < 4; i++)
                     {
                         if (activeFor <= timeSpan[i]) item.Competition[i]++;
                     }
                 }
             }
-            if (item.Sell_price == 0)
+            if (item.Sell_price == Double.MaxValue) item.Sell_price = 0;
+            item.Margin = ((item.Sell_price-item.Purchase_price)/item.Purchase_price);
+
+            ApiResponse<List<GetMarketsRegionIdHistory200Ok>> response;
+            List<GetMarketsRegionIdHistory200Ok> historyData;
+            int days = 30;
+
+            int retry = 0;
+            try
             {
-                item.Margin = 10;
+                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.SellStation.Region_id, item.Type_id);
             }
-            else
+            catch (IO.Swagger.Client.ApiException ex)
             {
-                item.Margin = (decimal)((item.Sell_price-item.Purchase_price)/item.Sell_price);
+                retry++;
+                if (retry > 4) throw;
+                Thread.Sleep(300);
+                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.SellStation.Region_id, item.Type_id);
             }
-            
+            historyData = response.Data.FindAll(fillItemHistoryHelper1);
+            if (historyData.Count > 0) item.Sell_volume = fillItemHistoryHelper2(historyData);
+
+            retry = 0;
+            try
+            {
+                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.PurchaseStation.Region_id, item.Type_id);
+            }
+            catch (IO.Swagger.Client.ApiException ex)
+            {
+                retry++;
+                if (retry > 4) throw;
+                Thread.Sleep(300);
+                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.PurchaseStation.Region_id, item.Type_id);
+
+            }
+            historyData = response.Data.FindAll(fillItemHistoryHelper1);
+            if (historyData.Count > 0) item.Purchase_volume = fillItemHistoryHelper2(historyData);
+
             return item;
+
+            bool fillItemHistoryHelper1(GetMarketsRegionIdHistory200Ok order)
+            {
+                DateTime testdate = DateTime.Now.AddDays(-days);
+                if (order.Date < testdate) return false;
+                return true;
+            }
+
+            int fillItemHistoryHelper2(List<GetMarketsRegionIdHistory200Ok> history)
+            {
+                int sum = 0;
+                foreach (GetMarketsRegionIdHistory200Ok data in history)
+                {
+                    sum += (int)data.Volume;
+                }
+                return sum / history.Count;
+            }
         }
 
     } /* class EMA */
@@ -496,16 +553,16 @@ namespace EMA_WPF
         private int _purchase_volume;
         private double _sell_price;
         private int _sell_volume;
-        private decimal _margin;
+        private double _margin;
         private int[] _competition;
 
         public EMASellItem()
         {
             _type_id = 0;
             _name = null;
-            _purchase_price = 0;
+            _purchase_price = Double.MaxValue;
             _purchase_volume = 0;
-            _sell_price = 0;
+            _sell_price = Double.MaxValue;
             _sell_volume = 0;
             _margin = 0;
             _competition = new int[] { 0, 0, 0, 0, 0 };
@@ -517,7 +574,7 @@ namespace EMA_WPF
         public int Purchase_volume { get => _purchase_volume; set => _purchase_volume = value; }
         public double Sell_price { get => _sell_price; set => _sell_price = value; }
         public int Sell_volume { get => _sell_volume; set => _sell_volume = value; }
-        public decimal Margin { get => _margin; set => _margin = value; }
+        public double Margin { get => _margin; set => _margin = value; }
         public int[] Competition { get => _competition; set => _competition = value; }
     }
 
