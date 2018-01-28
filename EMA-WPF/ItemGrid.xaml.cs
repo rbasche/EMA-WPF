@@ -28,18 +28,21 @@ namespace EMA_WPF
     {
         private EMA ema;
         private ObservableCollection<EMASellItem> mySellItems;
+        private ObservableCollection<EMAHistory> myHistory;
 
         public ItemGrid()
         {
             InitializeComponent();
             ema = EMA.Instance;
             mySellItems = new ObservableCollection<EMASellItem>();
+            historyButton.IsEnabled = false;
 
         }
 
         private async void GetOrderButton_Click(object sender, RoutedEventArgs e)
         {
             orderButton.IsEnabled = false;
+            historyButton.IsEnabled = false;
             itemListView.ItemsSource = mySellItems;
             var progressHandler1 = new Progress<string>(value =>
             {
@@ -94,7 +97,18 @@ namespace EMA_WPF
             }
             this.statusTextBlock.Text += message;
             orderButton.IsEnabled = true;
+            historyButton.IsEnabled = true;
         }
 
+        private void GetHistoryButton_Click(object sender, RoutedEventArgs e)
+        {
+            orderButton.IsEnabled = false;
+            historyButton.IsEnabled = false;
+
+            ema.EMAGetHistory(mySellItems);
+
+            historyButton.IsEnabled = true;
+            orderButton.IsEnabled = true;
+        }
     }
 }

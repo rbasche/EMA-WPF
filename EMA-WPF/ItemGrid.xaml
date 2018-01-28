@@ -17,10 +17,19 @@
         </Style>
         <Style x:Key="DataGridCellRight" TargetType="DataGridCell">
             <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style x:Key="DataGridCellCenter" TargetType="DataGridCell">
-            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+        <DataGridCell x:Key="selectionCell">
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                <CheckBox/>
+
+            </Grid>
+        </DataGridCell>
     </UserControl.Resources>
     
     <Grid>
@@ -111,20 +120,46 @@
         </Grid>
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
             <Button Name="orderButton" Content="Get Orders" Click="GetOrderButton_Click" Margin="5,5,5,5"/>
+            <Button Name="historyButton" Content="Get History Data" Click="GetHistoryButton_Click" Margin="5,5,5,5"/>
         </StackPanel>
         <DataGrid Name="itemListView" Grid.Row="2" IsReadOnly="True" AutoGenerateColumns="False">
             <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="Select" Width="5*" Binding="{Binding IsSelected}" 
+                                    HeaderStyle="{StaticResource DataGridHeaderStyle}" 
+                                    CellStyle="{StaticResource DataGridCellRight}"/>
                 <DataGridTextColumn Header="ID" Width="5*" Binding="{Binding Type_id}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}" 
                                     CellStyle="{StaticResource DataGridCellRight}"/>
                 <DataGridTextColumn Header="Name" Width="30*" Binding="{Binding Name}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}"/>
+                <!--
                 <DataGridTextColumn Header="Purchase" Width="8*" Binding="{Binding Purchase_price, StringFormat={}{0:N2}}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}"
                                     CellStyle="{StaticResource DataGridCellRight}"/>
                 <DataGridTextColumn Header="Sell" Width="8*" Binding="{Binding Sell_price, StringFormat={}{0:N2}}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}"
                                     CellStyle="{StaticResource DataGridCellRight}"/>
+                -->
+                <DataGridTemplateColumn Header="Prices" Width="8*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Column="0" Text="P: "/>
+                                <TextBlock Grid.Column="1" Text="{Binding Purchase_price, StringFormat={}{0:N2}}" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="0" Grid.Row="1" Text="S: "/>
+                                <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Sell_price, StringFormat={}{0:N2}}" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Margin" Width="8*" Binding="{Binding Margin, StringFormat={}{0:P2}}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}"
                                     CellStyle="{StaticResource DataGridCellRight}"/>
@@ -143,12 +178,33 @@
                 <DataGridTextColumn Header="all" Width="5*" Binding="{Binding Competition[4]}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}"
                                     CellStyle="{StaticResource DataGridCellRight}"/>
-                <DataGridTextColumn Header="V. Purch." Width="6*" Binding="{Binding Purchase_volume}" 
+                <!--                <DataGridTextColumn Header="V. Purch." Width="6*" Binding="{Binding Purchase_volume}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}"
                                     CellStyle="{StaticResource DataGridCellRight}"/>
                 <DataGridTextColumn Header="V. Sell" Width="6*" Binding="{Binding Sell_volume}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}"
                                     CellStyle="{StaticResource DataGridCellRight}"/>
+                -->
+                <DataGridTemplateColumn Header="Volumes" Width="8*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Column="0" Text="P: "/>
+                                <TextBlock Grid.Column="1" Text="{Binding Purchase_volume}"/>
+                                <TextBlock Grid.Column="0" Grid.Row="1" Text="S: "/>
+                                <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Sell_volume}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
         <StatusBar Grid.Row="3">
