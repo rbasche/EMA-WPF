@@ -544,45 +544,45 @@ namespace EMA_WPF
 
     public class EMASellItem
     {
-        private bool _isSelected;
-        private int _type_id;
-        private string _name;
-        private double _purchase_price;
-        private int _purchase_volume;
-        private double _sell_price;
-        private int _sell_volume;
-        private double _margin;
-        private int[] _competition;
-        private EMAHistory _purchaseHistory;
-        private EMAHistory _sellHistory;
+        private bool isSelected;
+        private int type_id;
+        private string name;
+        private double purchase_price;
+        private int purchase_volume;
+        private double sell_price;
+        private int sell_volume;
+        private double margin;
+        private int[] competition;
+        private EMAHistoryItem purchaseHistory;
+        private EMAHistoryItem sellHistory;
 
         public EMASellItem()
         {
-            _isSelected = false;
-            _type_id = 0;
-            _name = null;
-            _purchase_price = Double.MaxValue;
-            _purchase_volume = 0;
-            _sell_price = Double.MaxValue;
-            _sell_volume = 0;
-            _margin = 0;
-            _purchaseHistory = null;
-            _sellHistory = null;
-            _competition = new int[] { 0, 0, 0, 0, 0 };
+            IsSelected = false;
+            Type_id = 0;
+            Name = null;
+            Purchase_price = Double.MaxValue;
+            Purchase_volume = 0;
+            Sell_price = Double.MaxValue;
+            Sell_volume = 0;
+            Margin = 0;
+            PurchaseHistory = null;
+            SellHistory = null;
+            Competition = new int[] { 0, 0, 0, 0, 0 };  //# of competitors in 1h, 3h, 1d, 3d, all
 
         }
 
-        public bool IsSelected { get => _isSelected; set => _isSelected = value; }
-        public int Type_id { get => _type_id; set => _type_id = value; }
-        public string Name { get => _name; set => _name = value; }
-        public double Purchase_price { get => _purchase_price; set => _purchase_price = value; }
-        public int Purchase_volume { get => _purchase_volume; set => _purchase_volume = value; }
-        public double Sell_price { get => _sell_price; set => _sell_price = value; }
-        public int Sell_volume { get => _sell_volume; set => _sell_volume = value; }
-        public double Margin { get => _margin; set => _margin = value; }
-        public int[] Competition { get => _competition; set => _competition = value; }
-        public EMAHistory PurchaseHistory { get => _purchaseHistory; set => _purchaseHistory = value; }
-        public EMAHistory SellHistory { get => _sellHistory; set => _sellHistory = value; }
+        public bool IsSelected { get => isSelected; set => isSelected = value; }
+        public int Type_id { get => type_id; set => type_id = value; }
+        public string Name { get => name; set => name = value; }
+        public double Purchase_price { get => purchase_price; set => purchase_price = value; }
+        public int Purchase_volume { get => purchase_volume; set => purchase_volume = value; }
+        public double Sell_price { get => sell_price; set => sell_price = value; }
+        public int Sell_volume { get => sell_volume; set => sell_volume = value; }
+        public double Margin { get => margin; set => margin = value; }
+        public int[] Competition { get => competition; set => competition = value; }
+        public EMAHistoryItem PurchaseHistory { get => purchaseHistory; set => purchaseHistory = value; }
+        public EMAHistoryItem SellHistory { get => sellHistory; set => sellHistory = value; }
     }
 
     public class EMAProgressInfo
@@ -610,22 +610,50 @@ namespace EMA_WPF
         public string Message { get => _message; set => _message = value; }
     }
 
-    public class EMAHistory
+    public class EMAHistoryItem
     {
-        private double _averagePrice;
-        private int _sellVolume;
-        private int _buyVollume;
+        private DateTime date;
+        private double sellPrice;
+        private double buyPrice;
+        private long sellVolume;
+        private long buyVolume;
 
-        public EMAHistory()
+        public EMAHistoryItem(DateTime newDate, double lowPrice, double highPrice, double averagePrice, int dayVolume )
         {
-            _averagePrice = 0;
-            _sellVolume = 0;
-            _buyVollume = 0;
+            Date = newDate;
+
+            double priceRange = highPrice - lowPrice;
+            SellPrice = highPrice;
+            BuyPrice = lowPrice;
+            SellVolume = (long)((averagePrice - lowPrice*dayVolume)/priceRange);
+            BuyVolume = dayVolume - SellVolume;
         }
 
-        public double AveragePrice { get => _averagePrice; set => _averagePrice = value; }
-        public int SellVolume { get => _sellVolume; set => _sellVolume = value; }
-        public int BuyVolume { get => _buyVollume; set => _buyVollume = value; }
+        public DateTime Date { get => date; set => date = value; }
+        public double SellPrice { get => sellPrice; set => sellPrice = value; }
+        public double BuyPrice { get => buyPrice; set => buyPrice = value; }
+        public long SellVolume { get => sellVolume; set => sellVolume = value; }
+        public long BuyVolume { get => buyVolume; set => buyVolume = value; }
+
+        static public double WeightedSellPrice(List<EMAHistoryItem> historyList)
+        {
+            double weightedSellPrice = 0;
+            long volume = 0;
+
+            foreach (EMAHistoryItem historyItem in historyList)
+            {
+                volume += historyItem.SellVolume;
+                weightedSellPrice += historyItem.SellPrice * historyItem.SellVolume;
+            }
+
+            return weightedSellPrice/volume;
+        }
+    }
+
+    public class EMAHistory
+    {
+        List<EMAHistoryItem> historyItems;
+
     }
 
 }

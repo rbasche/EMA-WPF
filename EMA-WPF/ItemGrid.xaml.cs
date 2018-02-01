@@ -31,7 +31,7 @@ namespace EMA_WPF
     {
         private EMA ema;
         private ObservableCollection<EMASellItem> mySellItems;
-        private ObservableCollection<EMAHistory> myHistory;
+        private ObservableCollection<EMAHistoryItem> myHistory;
 
         public ItemGrid()
         {
