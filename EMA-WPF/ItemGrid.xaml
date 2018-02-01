@@ -124,9 +124,13 @@
         </StackPanel>
         <DataGrid Name="itemListView" Grid.Row="2" IsReadOnly="True" AutoGenerateColumns="False">
             <DataGrid.Columns>
-                <DataGridCheckBoxColumn Header="Select" Width="5*" Binding="{Binding IsSelected}" 
-                                    HeaderStyle="{StaticResource DataGridHeaderStyle}" 
-                                    CellStyle="{StaticResource DataGridCellRight}"/>
+                <DataGridTemplateColumn Header="Select" Width="5*" HeaderStyle="{StaticResource DataGridHeaderStyle}" CellStyle="{StaticResource DataGridCellRight}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsSelected}" Click="CheckBox_Click"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="ID" Width="5*" Binding="{Binding Type_id}" 
                                     HeaderStyle="{StaticResource DataGridHeaderStyle}" 
                                     CellStyle="{StaticResource DataGridCellRight}"/>

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -17,6 +19,7 @@ using ESISharp;
 using ESISharp.Enumerations;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Windows;
 
 
 namespace EMA_WPF
@@ -43,49 +46,47 @@ namespace EMA_WPF
         {
             orderButton.IsEnabled = false;
             historyButton.IsEnabled = false;
+            mySellItems.Clear();
             itemListView.ItemsSource = mySellItems;
-            var progressHandler1 = new Progress<string>(value =>
+
+            Progress<EMAProgressInfo> emaProgressHandler = new Progress<EMAProgressInfo>(info =>
             {
-                this.statusTextBlock.Text = String.Format("Get Item: {0}", value);
+                this.statusTextBlock.Text = info.Message;
+                if (info.IsNewItem)
+                {
+                    mySellItems.Add(info.Item);
+                }
             });
-            var progress1 = progressHandler1 as IProgress<string>;
+            ema.Progress = emaProgressHandler as IProgress<EMAProgressInfo>;
 
             this.statusTextBlock.Text = "starting: Get Items";
-            string message = await Task<TimeSpan>.Run(() =>
+            string message = await Task<TimeSpan>.Run( () =>
             {
                 try
                 {
-                    return ema.GetItemNamesForRegions(progress1);
+                    return ema.GetItemNamesForRegions();
                 }
                 catch (Exception ex)
                 {
-                    String exceptionMessage = String.Format(" -->Exception {0}<--", ex.Message);
+                    exceptionLog(ex);
+                    string exceptionMessage = String.Format(" --> Exception {0}< --", ex.Message);
                     return exceptionMessage;
                 }
-            });
+            } );
             this.statusTextBlock.Text += message;
-            var progressHandler2 = new Progress<EMAProgress>(value =>
-            {
-                this.statusTextBlock.Text = String.Format("Get Orders: sell item {0}", value.Message);
-                //mySellItems.Add(ema.SellItems.Last());
-                //mySellItems.Clear();
-                if (value.IsNewItem)
-                {
-                    mySellItems.Add(value.Item);
-                }
-            });
-            var progress2 = progressHandler2 as IProgress<EMAProgress>;
+
 
             this.statusTextBlock.Text = "starting: Get Orders";
             message = await Task<TimeSpan>.Run(() =>
             {
                 try
                 {
-                    return ema.GetSellItems(progress2);
-                    //return ema.GetSellItemsByName(progress);
+                    return ema.GetSellItems();
                 }
                 catch (Exception ex)
                 {
+                    exceptionLog(ex);
+
                     string exceptionMessage = String.Format(" --> Exception {0}< --", ex.Message);
                     return exceptionMessage;
                 }
@@ -98,6 +99,25 @@ namespace EMA_WPF
             this.statusTextBlock.Text += message;
             orderButton.IsEnabled = true;
             historyButton.IsEnabled = true;
+
+            void exceptionLog(Exception exception)
+            {
+                //string logFile = System.AppDomain.CurrentDomain.BaseDirectory + DateTime.Now.ToString("yyyyMMdd") + ".exception.log";
+                //string logFile = System.AppDomain.CurrentDomain.BaseDirectory + "Exception.log";
+
+                using (FileStream logStream = new FileStream(System.AppDomain.CurrentDomain.BaseDirectory + "Exception.log", FileMode.Append))
+                using (StreamWriter logWriter = new StreamWriter(logStream))
+                { 
+                    logWriter.WriteLine(String.Format("{0}: {1}", DateTime.Now, exception.Message));
+                    logWriter.WriteLine(exception.StackTrace);
+                    foreach (var item in exception.Data)
+                    {
+                        logWriter.WriteLine(item.ToString());
+                    }
+                    logWriter.Flush();
+                }
+
+            }
         }
 
         private void GetHistoryButton_Click(object sender, RoutedEventArgs e)
@@ -105,10 +125,38 @@ namespace EMA_WPF
             orderButton.IsEnabled = false;
             historyButton.IsEnabled = false;
 
-            ema.EMAGetHistory(mySellItems);
+            ema.GetHistory();
+            //mySellItems.Clear();
+
+            List<EMASellItem> selectedItems = ema.SellItems.FindAll(ema.FindSelectedItemsHelper);
+            foreach (EMASellItem item in selectedItems)
+            {
+                int index = mySellItems.IndexOf(item);
+
+                mySellItems[index].PurchaseHistory = item.PurchaseHistory;
+                mySellItems[index].Purchase_price = item.Purchase_price;
+                mySellItems[index].SellHistory = item.SellHistory;
+                mySellItems[index].Sell_price = item.Sell_price;
+
+            }
 
             historyButton.IsEnabled = true;
             orderButton.IsEnabled = true;
+
+
+        }
+
+        private void CheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            EMASellItem item = (EMASellItem)((CheckBox)sender).DataContext;
+            item.IsSelected = true;
+            EMASellItem originItem = ema.SellItems.Find(FindSellItemHelper);
+            originItem.IsSelected = true;
+
+            bool FindSellItemHelper(EMASellItem sellItem)
+            {
+                return sellItem.Type_id == item.Type_id;
+            }
         }
     }
 }

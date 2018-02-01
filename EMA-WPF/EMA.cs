@@ -51,12 +51,12 @@ namespace EMA_WPF
         private static SearchApi searchApi = new SearchApi();
         private static UniverseApi universeApi = new UniverseApi();
         private static MarketApi marketApi = new MarketApi();
-        private static ESIEve.Public publicEve = new ESIEve.Public();
+        //private static ESIEve.Public publicEve = new ESIEve.Public();
 
         public SearchApi SearchApi { get => searchApi; }
         public UniverseApi UniverseApi { get => universeApi; }
         public MarketApi MarketApi { get => marketApi; }
-        public ESIEve.Public PublicEve { get => publicEve; }
+        //public ESIEve.Public PublicEve { get => publicEve; }
 
         public EMAStation PurchaseStation { get => purchaseStation; set => purchaseStation = value; }
         private EMAStation purchaseStation;
@@ -70,8 +70,17 @@ namespace EMA_WPF
         public List<PostUniverseNames200Ok> SellItemNames { get => sellItemNames; set => sellItemNames = value; }
         private List<PostUniverseNames200Ok> sellItemNames;
 
-        private int retrydelay = 400;
-        public int RetryDelay{ get => retrydelay; set => retrydelay = value; }
+        private int retryDelay;
+        public int RetryDelay{ get => retryDelay; set => retryDelay = value; }
+
+        private int retryMax;
+        public int RetryMax { get => retryMax; set => retryMax = value; }
+
+        private int historyRange;
+        public int HistoryRange { get => historyRange; set => historyRange = value; }
+
+        private IProgress<EMAProgressInfo> progress;
+        public IProgress<EMAProgressInfo> Progress { get => progress; set => progress = value; }
 
         static EMA()
         {
@@ -79,7 +88,7 @@ namespace EMA_WPF
 
         private EMA()
         {
-            ESIEve.Public PublicEve = new ESIEve.Public();
+            //ESIEve.Public PublicEve = new ESIEve.Public();
 
             SellItems = new List<EMASellItem>
             {
@@ -92,6 +101,9 @@ namespace EMA_WPF
                 Capacity = 20000
             };
             int timeout = IO.Swagger.Client.Configuration.Default.Timeout;
+            RetryDelay = 400;
+            RetryMax = 10;
+            HistoryRange = 30;
 
         }
         public static EMA Instance
@@ -113,40 +125,20 @@ namespace EMA_WPF
             {
                 Station = response.Data.Station
             };
-            //search = JsonConvert.DeserializeObject<EveSearch>(data.ToString());
 
             return search;
         }
-        public static EveSearch Search(string item, SearchCategory category)
-        {
-            EMA ema = EMA.Instance;
-
-            EsiResponse response = ema.PublicEve.Search.SearchPublic(item, category).Execute();
-            if (response.Code != System.Net.HttpStatusCode.OK)
-            {
-                return null;
-            }
-
-            EveSearch search = new EveSearch();
-            search = JsonConvert.DeserializeObject<EveSearch>(response.Body);
-
-            return search;
-        }
-
 
         public static List<PostUniverseNames200Ok> GetEveNames(List<int?> ids)
         {
             EMA ema = EMA.Instance;
 
-            //EsiResponse response = ema.PublicEve.Universe.GetTypeNamesAndCategories(ids).Execute();
             ApiResponse<List<PostUniverseNames200Ok>> response = ema.UniverseApi.PostUniverseNamesWithHttpInfo(ids);
             if (!response.StatusCode.Equals((int)HttpStatusCode.OK))
             {
                 return null;
             }
 
-            
-            //list = JsonConvert.DeserializeObject<List<EveName>>(response.Body);
             return response.Data;
         }
 
@@ -160,7 +152,7 @@ namespace EMA_WPF
             return regionResponse.Data;
         }
 
-        private List<GetMarketsRegionIdOrders200Ok> GetEveOrders(EMAStation station, IProgress<EMAProgress> progress)
+        private List<GetMarketsRegionIdOrders200Ok> GetEveOrders(EMAStation station)
         {
             List<GetMarketsRegionIdOrders200Ok> orderList;
             ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
@@ -172,23 +164,23 @@ namespace EMA_WPF
             if (station != null)
             {
                 List<GetMarketsRegionIdOrders200Ok> orderPage;
-                response = GetMarketOrdersHelper(station.Region_id, 1, null, progress);
-                //response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id, null, 1, name.Id);
-                //response = PublicEve.Market.GetRegionOrders(station.Region_id, name.Id, MarketOrderType.Sell).Execute();
+                //response = GetMarketOrdersHelper(station.Region_id, 1, null, progress);
+                response = GetMarketOrdersHelper(station.Region_id, 1, null);
                 int pages = int.Parse(response.Headers["X-Pages"]);
                 for (int page = 1; page < pages; page++)
                 {
                     orderPage = response.Data;
                     orderList.AddRange(orderPage);
-                    response = GetMarketOrdersHelper(station.Region_id, page, null, progress);
-                    //response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id,null,page+1,name.Id);
+                    //response = GetMarketOrdersHelper(station.Region_id, page, null, progress);
+                    response = GetMarketOrdersHelper(station.Region_id, page, null);
                 }
                 orderPage = response.Data;
                 orderList.AddRange(orderPage);
             }
             return orderList;
         }
-        private List<GetMarketsRegionIdOrders200Ok> GetEveOrdersByName(EMAStation station, PostUniverseNames200Ok name, IProgress<EMAProgress> progress)
+
+        private List<GetMarketsRegionIdOrders200Ok> GetEveOrdersByName(EMAStation station, PostUniverseNames200Ok name)
         {
             List<GetMarketsRegionIdOrders200Ok> orderList;
             ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
@@ -200,16 +192,15 @@ namespace EMA_WPF
             if (station != null)
             {
                 List<GetMarketsRegionIdOrders200Ok> orderPage;
-                response = GetMarketOrdersHelper(station.Region_id, 1, name.Id, progress);
-                //response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id, null, 1, name.Id);
-                //response = PublicEve.Market.GetRegionOrders(station.Region_id, name.Id, MarketOrderType.Sell).Execute();
+                //response = GetMarketOrdersHelper(station.Region_id, 1, name.Id, progress);
+                response = GetMarketOrdersHelper(station.Region_id, 1, name.Id);
                 int pages = int.Parse(response.Headers["X-Pages"]);
                 for (int page = 1; page < pages; page++)
                 {
                     orderPage = response.Data;
                     orderList.AddRange(orderPage);
-                    response = GetMarketOrdersHelper(station.Region_id, page, name.Id, progress);
-                    //response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", station.Region_id,null,page+1,name.Id);
+                    //response = GetMarketOrdersHelper(station.Region_id, page, name.Id, progress);
+                    response = GetMarketOrdersHelper(station.Region_id, page, name.Id);
                 }
                 orderPage = response.Data;
                 orderList.AddRange(orderPage);
@@ -217,9 +208,8 @@ namespace EMA_WPF
             return orderList;
         }
 
-        private ApiResponse<List<GetMarketsRegionIdOrders200Ok>> GetMarketOrdersHelper(int regionid, int page, int? nameid, IProgress<EMAProgress> progress)
+        private ApiResponse<List<GetMarketsRegionIdOrders200Ok>> GetMarketOrdersHelper(int regionid, int page, int? nameid)
         {
-            EMA ema = EMA.Instance;
             int retry = 0;
             ApiResponse<List<GetMarketsRegionIdOrders200Ok>> response;
             try
@@ -230,17 +220,17 @@ namespace EMA_WPF
             catch (IO.Swagger.Client.ApiException ex)
             {
                 retry++;
-                if (retry < 4)
+                if (retry < RetryMax)
                 {
                     if (nameid == null)
                     {
-                        progress.Report(new EMAProgress(String.Format(" -->GetMarketOrders: {0} retry {1}, region {2}, page{3}", ex.Message, retry, regionid, page)));
+                        Progress.Report(new EMAProgressInfo(String.Format(" -->GetMarketOrders: {0} retry {1}, region {2}, page{3}", ex.Message, retry, regionid, page)));
                     }
                     else
                     {
-                        progress.Report(new EMAProgress(String.Format(" -->GetMarketOrders: {0} retry {1}, region {2}, item {3}, page{4}", ex.Message, retry, regionid, nameid, page)));
+                        progress.Report(new EMAProgressInfo(String.Format(" -->GetMarketOrders: {0} retry {1}, region {2}, item {3}, page{4}", ex.Message, retry, regionid, nameid, page)));
                     }
-                    Thread.Sleep(ema.RetryDelay); //wait some time before retrying
+                    Thread.Sleep(RetryDelay); //wait some time before retrying
                     response = MarketApi.GetMarketsRegionIdOrdersWithHttpInfo("sell", regionid, null, page, nameid);
                     return response;
                 }
@@ -251,16 +241,12 @@ namespace EMA_WPF
 
         public string GetItemNamesForRegions()
         {
-            return GetItemNamesForRegions(null);
-        }
-        public string GetItemNamesForRegions(IProgress<string> progress)
-        {
             DateTime start = DateTime.Now;
             List<int?> purchaseItemIDs, sellItemIDs;
             SellItemNames.Clear();
 
-            purchaseItemIDs = GetItemIDs(PurchaseStation.Region_id, progress);
-            sellItemIDs = GetItemIDs(SellStation.Region_id, progress);
+            purchaseItemIDs = GetItemIDs(PurchaseStation.Region_id);
+            sellItemIDs = GetItemIDs(SellStation.Region_id);
 
             List<int?> itemIDs = new List<int?>
             {
@@ -269,12 +255,12 @@ namespace EMA_WPF
 
             itemIDs.AddRange(purchaseItemIDs);
             itemIDs = itemIDs.Intersect(sellItemIDs).ToList();
-            if (progress != null)
+            if (Progress != null)
             {
-                progress.Report(String.Format("region {0}: {1} ids, region {2}: {3} ids, consolidated {4} ids",
-                    PurchaseStation.Region_id, purchaseItemIDs.Count.ToString(),
-                    SellStation.Region_id, sellItemIDs.Count.ToString(),
-                    itemIDs.Count.ToString()));
+                Progress.Report(new EMAProgressInfo(String.Format("Get Items: region {0}: {1} ids, region {2}: {3} ids, consolidated {4} ids",
+                            PurchaseStation.Region_id, purchaseItemIDs.Count.ToString(),
+                            SellStation.Region_id, sellItemIDs.Count.ToString(),
+                            itemIDs.Count.ToString())));
             }
 
             List<int?> slice = new List<int?>();
@@ -285,10 +271,9 @@ namespace EMA_WPF
                 slice = itemIDs.GetRange(i, Math.Min(increment, itemIDs.Count - i));
                 response = UniverseApi.PostUniverseNamesWithHttpInfo(slice);
                 SellItemNames.AddRange(response.Data);
-                //SellItemNames.AddRange(JsonConvert.DeserializeObject<List<EveName>>(response.Body));
-                if (progress != null)
+                if (Progress != null)
                 {
-                    progress.Report(String.Format("names: {0}/{1}", SellItemNames.Count.ToString(), itemIDs.Count.ToString()));
+                    Progress.Report(new EMAProgressInfo(String.Format("Get Items: names: {0}/{1}", SellItemNames.Count.ToString(), itemIDs.Count.ToString())));
                 }
 
             }
@@ -297,62 +282,55 @@ namespace EMA_WPF
 
         private List<int?> GetItemIDs(int region)
         {
-            return GetItemIDs(region, null);
-        }
-        private List<int?> GetItemIDs(int region,IProgress<string> progress)
-        {
-            EMA ema = EMA.Instance;
             List<int?> itemIDs = new List<int?>
             {
                 Capacity = 100000
             };
 
             ApiResponse<List<int?>> response = GetItemIdsHelper(1);
-            //ApiResponse<List<int?>> response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region);
-            //response = PublicEve.Market.GetMarketTypes(region).Execute();
             if (!response.StatusCode.Equals((int)HttpStatusCode.OK))
             {
                 return null;
             }
-
 
             int pages = int.Parse(response.Headers["X-Pages"]);
             for (int page = 1; page < pages; page++)
             {
                 itemIDs.AddRange(response.Data);
                 response = GetItemIdsHelper(page + 1);
-                //response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region, null, page + 1);
             }
             itemIDs.AddRange(response.Data);
             itemIDs = itemIDs.Distinct().ToList();
 
-            if (progress != null)
+            if (Progress != null)
             {
-                progress.Report(String.Format("region {0}: ids {1}", region.ToString(), itemIDs.Count.ToString()));
+                Progress.Report(new EMAProgressInfo(String.Format("region {0}: ids {1}", region.ToString(), itemIDs.Count.ToString())));
             }
             return itemIDs;
+
             ApiResponse<List<int?>> GetItemIdsHelper(int _page)
             {
                 ApiResponse<List<int?>> _response;
-                int retry = 0;
+                int retryCount = 0;
                 try
                 {
                     _response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region, null, _page);
-                    if (progress != null)
+                    if (Progress != null)
                     {
-                        progress.Report(String.Format("region {0}: ids {1}", region.ToString(), itemIDs.Count.ToString()));
+                        Progress.Report(new EMAProgressInfo(String.Format("region {0}: ids {1}", region.ToString(), itemIDs.Count.ToString())));
                     }
                 }
                 catch (IO.Swagger.Client.ApiException ex)
                 {
-                    retry++;
-                    if (retry < 4)
+                    retryCount++;
+                    if (retryCount < retryMax)
                     {
-                        if (progress != null)
+                        if (Progress != null)
                         {
-                            progress.Report(String.Format("region {0}: ids {1}, -->Exception {2}, retrying", region.ToString(), itemIDs.Count.ToString(),ex.Message));
+                            Progress.Report(new EMAProgressInfo(String.Format("region {0}: ids {1}, -->Exception {2}, retrying", region.ToString(), itemIDs.Count.ToString(), ex.Message)));
+
                         }
-                        Thread.Sleep(ema.RetryDelay); //wait some time before retrying
+                        Thread.Sleep(RetryDelay); //wait some time before retrying
                         _response = MarketApi.GetMarketsRegionIdTypesWithHttpInfo(region, null, _page);
                         return _response;
                     }
@@ -364,19 +342,15 @@ namespace EMA_WPF
 
         public string GetSellItems()
         {
-            return GetSellItems(null);
-        }
-        public string GetSellItems(IProgress<EMAProgress> progress)
-        {
             DateTime start = DateTime.Now;
             List<GetMarketsRegionIdOrders200Ok> purchaseOrders, sellOrders, pOrders, sOrders;
 
             EMASellItem item;
-            purchaseOrders = GetEveOrders(PurchaseStation, progress);
+            purchaseOrders = GetEveOrders(PurchaseStation);
             int removedPurchaseRegionBuyOrders = purchaseOrders.RemoveAll(RemoveBuyOrdersHelper);
             int removedWrongStationPurchaseOrders = purchaseOrders.RemoveAll(RemoveWrongPurchaseStationsHelper);
 
-            sellOrders = GetEveOrders(SellStation, progress);
+            sellOrders = GetEveOrders(SellStation);
             int removedSellRegionBuyOrders = sellOrders.RemoveAll(RemoveBuyOrdersHelper);
             int removedWrongStationSellOrders = sellOrders.RemoveAll(RemoveWrongSellStationsHelper);
 
@@ -392,11 +366,12 @@ namespace EMA_WPF
                 if (item != null)
                 {
                     SellItems.Add(item);
-                    progress.Report(new EMAProgress(item,true,String.Format("{0}: Item {1}: {2}", SellItems.Count, item.Type_id.ToString(), item.Name)));
+                    Progress.Report(new EMAProgressInfo(item,true,String.Format("{0}: Item {1}: {2}", SellItems.Count, item.Type_id.ToString(), item.Name)));
                 }
             }
             return String.Format(" finished, time elapsed: {0}", DateTime.Now - start);
         }
+
         private bool RemoveBuyOrdersHelper(GetMarketsRegionIdOrders200Ok order)
         {
             return (bool)order.IsBuyOrder;
@@ -412,23 +387,19 @@ namespace EMA_WPF
 
         public string GetSellItemsByName()
         {
-            return GetSellItemsByName(null);
-        }
-        public string GetSellItemsByName(IProgress<EMAProgress> progress)
-        {
             DateTime start = DateTime.Now;
             List<GetMarketsRegionIdOrders200Ok> purchaseOrders, sellOrders;
  
             EMASellItem item;
             foreach (PostUniverseNames200Ok name in SellItemNames)
             {
-                purchaseOrders = GetEveOrdersByName(PurchaseStation, name, progress);
+                purchaseOrders = GetEveOrdersByName(PurchaseStation, name);
                 if (purchaseOrders.Count == 0)
                 {
                     //if the item is not sold in the region of purchase station skip it
                     continue;
                 }
-                sellOrders = GetEveOrdersByName(SellStation, name, progress);
+                sellOrders = GetEveOrdersByName(SellStation, name);
                 item = FillItem(PurchaseStation.Station_id, SellStation.Station_id, name, purchaseOrders, sellOrders);
                 if (item != null)
                 {
@@ -437,7 +408,7 @@ namespace EMA_WPF
                         continue;
                     }
                     SellItems.Add(item);
-                    progress.Report(new EMAProgress(item,true,String.Format("{0}: Item {1}: {2}",SellItems.Count, item.Type_id.ToString(), item.Name)));
+                    Progress.Report(new EMAProgressInfo(item, true, String.Format("{0}: Item {1}: {2}", SellItems.Count, item.Type_id.ToString(), item.Name)));
                 }
             }
             return String.Format(" finished, time elapsed: {0}",DateTime.Now - start);
@@ -445,7 +416,6 @@ namespace EMA_WPF
 
         private EMASellItem FillItem(int pStation, int sStation, PostUniverseNames200Ok name, List<GetMarketsRegionIdOrders200Ok> pOrders, List<GetMarketsRegionIdOrders200Ok> sOrders)
         {
-            EMA ema = EMA.Instance;
 
             EMASellItem item = new EMASellItem();
             DateTime now = DateTime.Now.ToUniversalTime();
@@ -483,52 +453,63 @@ namespace EMA_WPF
             if (item.Sell_price == Double.MaxValue) item.Sell_price = 0;
             item.Margin = ((item.Sell_price-item.Purchase_price)/item.Purchase_price);
 
-            ApiResponse<List<GetMarketsRegionIdHistory200Ok>> response;
-            List<GetMarketsRegionIdHistory200Ok> historyData;
-            int days = 30;
-
-            int retry = 0;
-            try
-            {
-                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.SellStation.Region_id, item.Type_id);
-            }
-            catch (IO.Swagger.Client.ApiException ex)
-            {
-                retry++;
-                if (retry > 10)
-                {
-                    throw;
-                }
-                Thread.Sleep(ema.RetryDelay);
-                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.SellStation.Region_id, item.Type_id);
-            }
-            historyData = response.Data.FindAll(fillItemHistoryHelper1);
-            if (historyData.Count > 0) item.Sell_volume = fillItemHistoryHelper2(historyData);
-
-            retry = 0;
-            try
-            {
-                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.PurchaseStation.Region_id, item.Type_id);
-            }
-            catch (IO.Swagger.Client.ApiException ex)
-            {
-                retry++;
-                if (retry > 10)
-                {
-                    throw;
-                }
-                Thread.Sleep(ema.RetryDelay);
-                response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(ema.PurchaseStation.Region_id, item.Type_id);
-
-            }
-            historyData = response.Data.FindAll(fillItemHistoryHelper1);
-            if (historyData.Count > 0) item.Purchase_volume = fillItemHistoryHelper2(historyData);
-
             return item;
+        }
+
+        public void GetHistory()
+        {
+            List<EMASellItem> selecteditems = SellItems.FindAll(FindSelectedItemsHelper);
+
+            foreach (EMASellItem item in selecteditems)
+            {
+                ApiResponse<List<GetMarketsRegionIdHistory200Ok>> response;
+                List<GetMarketsRegionIdHistory200Ok> historyData;
+
+                int retryCount = 0;
+                try
+                {
+                    response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(SellStation.Region_id, item.Type_id);
+                }
+                catch (IO.Swagger.Client.ApiException ex)
+                {
+                    if (ex.Message.Contains("\"error\":\"Type not found!\"")) return;
+                    retryCount++;
+                    if (retryCount > retryMax)
+                    {
+                        throw;
+                    }
+                    Thread.Sleep(RetryDelay);
+                    response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(SellStation.Region_id, item.Type_id);
+                }
+                historyData = response.Data.FindAll(fillItemHistoryHelper1);
+                if (historyData.Count > 0) item.Sell_volume = fillItemHistoryHelper2(historyData);
+
+                retryCount = 0;
+                try
+                {
+                    response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(PurchaseStation.Region_id, item.Type_id);
+                }
+                catch (IO.Swagger.Client.ApiException ex)
+                {
+                    if (ex.Message.Contains("\"error\":\"Type not found!\"")) return;
+                    retryCount++;
+                    if (retryCount > retryMax)
+                    {
+                        throw;
+                    }
+                    Thread.Sleep(RetryDelay);
+                    response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(PurchaseStation.Region_id, item.Type_id);
+
+                }
+                historyData = response.Data.FindAll(fillItemHistoryHelper1);
+                if (historyData.Count > 0) item.Purchase_volume = fillItemHistoryHelper2(historyData);
+
+            }
+            return;
 
             bool fillItemHistoryHelper1(GetMarketsRegionIdHistory200Ok order)
             {
-                DateTime testdate = DateTime.Now.AddDays(-days);
+                DateTime testdate = DateTime.Now.AddDays(-HistoryRange);
                 if (order.Date < testdate) return false;
                 return true;
             }
@@ -544,27 +525,11 @@ namespace EMA_WPF
             }
         }
 
-        public void EMAGetHistory(ObservableCollection<EMASellItem> itemCollection)
+        public bool FindSelectedItemsHelper(EMASellItem item)
         {
-            EMASellItem listItem;
-            int listItemIndex;
-            int typeid;
-            foreach (EMASellItem collectionItem in itemCollection)
-            {
-                if (collectionItem.IsSelected)
-                {
-                    typeid = collectionItem.Type_id;
-                    listItem = SellItems.Find(FindItemHelper);
-                }
-                EMAHistory purchaseHistory = null;
-                
-            }
-
-            bool FindItemHelper(EMASellItem findItem)
-            {
-                return (findItem.Type_id == typeid);
-            }
+            return item.IsSelected;
         }
+
 
     } /* class EMA */
 
@@ -620,20 +585,20 @@ namespace EMA_WPF
         public EMAHistory SellHistory { get => _sellHistory; set => _sellHistory = value; }
     }
 
-    public class EMAProgress
+    public class EMAProgressInfo
     {
         private bool _isNewItem;
         private string _message;
         private EMASellItem _item;
 
-        public EMAProgress(EMASellItem item,bool isNewItem, string message)
+        public EMAProgressInfo(EMASellItem item,bool isNewItem, string message)
         {
             this.IsNewItem = isNewItem;
             this.Message = message;
             this.Item = item;
 
         }
-        public EMAProgress(string message)
+        public EMAProgressInfo(string message)
         {
             this.Item = null;
             this.IsNewItem = false;
