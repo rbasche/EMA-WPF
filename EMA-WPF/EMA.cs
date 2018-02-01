@@ -79,6 +79,9 @@ namespace EMA_WPF
         private int historyRange;
         public int HistoryRange { get => historyRange; set => historyRange = value; }
 
+        private double minMargin;
+        public double MinMargin { get => minMargin; set => minMargin = value; }
+
         private IProgress<EMAProgressInfo> progress;
         public IProgress<EMAProgressInfo> Progress { get => progress; set => progress = value; }
 
@@ -104,6 +107,7 @@ namespace EMA_WPF
             RetryDelay = 400;
             RetryMax = 10;
             HistoryRange = 30;
+            MinMargin = 0.05; //filter out all items with a margin less than 5%
 
         }
         public static EMA Instance
@@ -453,6 +457,8 @@ namespace EMA_WPF
             if (item.Sell_price == Double.MaxValue) item.Sell_price = 0;
             item.Margin = ((item.Sell_price-item.Purchase_price)/item.Purchase_price);
 
+            if (item.Margin < MinMargin && item.Margin > -1) return null;
+
             return item;
         }
 
@@ -483,7 +489,7 @@ namespace EMA_WPF
                     response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(SellStation.Region_id, item.Type_id);
                 }
                 // get the eve history records for the last days (ema.HistoryRange)
-                eveHistoryData = response.Data.FindAll(fillItemHistoryHelper1);
+                eveHistoryData = response.Data.FindAll(GetHistoryRecordsInRange);
                 // compute the average volume
                 if (eveHistoryData.Count > 0) item.Sell_volume = fillItemHistoryHelper2(eveHistoryData);
                 // create the ema history records
@@ -514,27 +520,29 @@ namespace EMA_WPF
                     response = MarketApi.GetMarketsRegionIdHistoryWithHttpInfo(PurchaseStation.Region_id, item.Type_id);
 
                 }
-                eveHistoryData = response.Data.FindAll(fillItemHistoryHelper1);
+                eveHistoryData = response.Data.FindAll(GetHistoryRecordsInRange);
                 if (eveHistoryData.Count > 0) item.Purchase_volume = fillItemHistoryHelper2(eveHistoryData);
 
             }
             return;
 
-            bool fillItemHistoryHelper1(GetMarketsRegionIdHistory200Ok order)
+            bool GetHistoryRecordsInRange(GetMarketsRegionIdHistory200Ok order)
             {
+                TimeSpan orderAge = (TimeSpan)(DateTime.Now - order.Date);
                 DateTime testdate = DateTime.Now.AddDays(-HistoryRange);
-                if (order.Date < testdate) return false;
+                if (orderAge.Days > HistoryRange) return false;
                 return true;
             }
 
             int fillItemHistoryHelper2(List<GetMarketsRegionIdHistory200Ok> history)
             {
-                int sum = 0;
-                foreach (GetMarketsRegionIdHistory200Ok data in history)
+                int volumeSum = 0;
+                foreach (GetMarketsRegionIdHistory200Ok record in history)
                 {
-                    sum += (int)data.Volume;
+                    volumeSum += (int)record.Volume;
                 }
-                return sum / history.Count;
+                float averageVolume = (float)volumeSum / history.Count;
+                return volumeSum / history.Count;
             }
         }
 
@@ -550,6 +558,7 @@ namespace EMA_WPF
             foreach (GetMarketsRegionIdHistory200Ok eveHistoryItem in eveHistory)
             {
                 emaHistoryItem = new EMAHistoryItem(eveHistoryItem.Date, eveHistoryItem.Lowest, eveHistoryItem.Highest, eveHistoryItem.Average, eveHistoryItem.Volume);
+                emaHistory.Add(emaHistoryItem);
             }
             return emaHistory;
         }
@@ -645,11 +654,27 @@ namespace EMA_WPF
         {
             Date = (DateTime) newDate;
 
-            double priceRange = (double)highPrice - (double)lowPrice;
-            SellPrice = (double)highPrice;
-            BuyPrice = (double)lowPrice;
-            SellVolume = (long)((averagePrice - lowPrice*dayVolume)/priceRange);
-            BuyVolume = (long)dayVolume - SellVolume;
+            SellPrice = 0;
+            BuyPrice = 0;
+            SellVolume = 0;
+            BuyVolume = 0;
+
+            if (dayVolume > 0)
+            {
+                if (highPrice == lowPrice)
+                {
+                    SellPrice = (double)highPrice;
+                    SellVolume = (long)dayVolume;
+                }
+                else
+                {
+                    double priceRange = (double)highPrice - (double)lowPrice;
+                    SellPrice = (double)highPrice;
+                    BuyPrice = (double)lowPrice;
+                    SellVolume = (long)(dayVolume * (double)((averagePrice - lowPrice) / priceRange));
+                    BuyVolume = (long)dayVolume - SellVolume;
+                }
+            }
         }
 
         public DateTime Date { get => date; set => date = value; }
@@ -677,9 +702,10 @@ namespace EMA_WPF
             SellVolumes = new Dictionary<int, long>();
         }
 
-        public EMAHistory(List<EMAHistoryItem> list)
+        public EMAHistory(List<EMAHistoryItem> historyitemList)
         {
-            HistoryItems = list;
+            new EMAHistory();
+            HistoryItems = historyitemList;
         }
 
         public void WeightedSellPriceandVolumes(int timespan)
@@ -689,15 +715,17 @@ namespace EMA_WPF
 
             foreach (EMAHistoryItem historyItem in HistoryItems)
             {
-                if (DateTime.Now.AddDays(-timespan) <= historyItem.Date)
+                TimeSpan itemAge = historyItem.Date - DateTime.Now; 
+                if (itemAge.Days < timespan)
                 {
                     volume += historyItem.SellVolume;
                     weightedSellPrice += historyItem.SellPrice * historyItem.SellVolume;
 
                 }
             }
+            weightedSellPrice /= volume;
             SellVolumes.Add(timespan, volume);
-            WeightedSellPrices.Add(timespan, weightedSellPrice / volume);
+            WeightedSellPrices.Add(timespan, weightedSellPrice);
         }
 
 
