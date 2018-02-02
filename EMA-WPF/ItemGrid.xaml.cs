@@ -15,10 +15,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using ESISharp;
-using ESISharp.Enumerations;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Windows;
 
 
@@ -105,7 +101,7 @@ namespace EMA_WPF
                 //string logFile = System.AppDomain.CurrentDomain.BaseDirectory + DateTime.Now.ToString("yyyyMMdd") + ".exception.log";
                 //string logFile = System.AppDomain.CurrentDomain.BaseDirectory + "Exception.log";
 
-                using (FileStream logStream = new FileStream(System.AppDomain.CurrentDomain.BaseDirectory + "Exception.log", FileMode.Append))
+                using (FileStream logStream = new FileStream(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\EMA\Exception.log", FileMode.Append))
                 using (StreamWriter logWriter = new StreamWriter(logStream))
                 { 
                     logWriter.WriteLine(String.Format("{0}: {1}", DateTime.Now, exception.Message));

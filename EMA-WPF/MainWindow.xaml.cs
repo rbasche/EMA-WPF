@@ -14,14 +14,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-//using IO.Swagger.Api;
-//using IO.Swagger.Client;
-//using IO.Swagger.Model;
-using ESISharp;
-using ESISharp.Enumerations;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-
 namespace EMA_WPF
 {
     /// <summary>

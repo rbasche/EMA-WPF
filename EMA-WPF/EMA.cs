@@ -7,12 +7,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-using ESISharp;
-using ESISharp.Enumerations;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-
 using IO.Swagger.Api;
 using IO.Swagger.Model;
 using IO.Swagger.Client;
@@ -702,11 +696,7 @@ namespace EMA_WPF
             SellVolumes = new Dictionary<int, long>();
         }
 
-        public EMAHistory(List<EMAHistoryItem> historyitemList)
-        {
-            new EMAHistory();
-            HistoryItems = historyitemList;
-        }
+        public EMAHistory(List<EMAHistoryItem> historyitemList) : this() => HistoryItems = historyitemList;
 
         public void WeightedSellPriceandVolumes(int timespan)
         {
