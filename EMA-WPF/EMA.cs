@@ -41,16 +41,16 @@ namespace EMA_WPF
     {
 
         private static readonly EMA instance = new EMA();
+        private Eve eve = Eve.Instance;
+
 
         private static SearchApi searchApi = new SearchApi();
         private static UniverseApi universeApi = new UniverseApi();
         private static MarketApi marketApi = new MarketApi();
-        //private static ESIEve.Public publicEve = new ESIEve.Public();
 
         public SearchApi SearchApi { get => searchApi; }
         public UniverseApi UniverseApi { get => universeApi; }
         public MarketApi MarketApi { get => marketApi; }
-        //public ESIEve.Public PublicEve { get => publicEve; }
 
         public EMAStation PurchaseStation { get => purchaseStation; set => purchaseStation = value; }
         private EMAStation purchaseStation;
@@ -75,6 +75,12 @@ namespace EMA_WPF
 
         private double minMargin;
         public double MinMargin { get => minMargin; set => minMargin = value; }
+
+        private double brokerRate;
+        public double BrokerRate { get => brokerRate; set => brokerRate = value; }
+
+        private double taxRate;
+        public double TaxRate { get => taxRate; set => taxRate = value; }
 
         private IProgress<EMAProgressInfo> progress;
         public IProgress<EMAProgressInfo> Progress { get => progress; set => progress = value; }
@@ -101,7 +107,10 @@ namespace EMA_WPF
             RetryDelay = 400;
             RetryMax = 10;
             HistoryRange = 30;
-            MinMargin = 0.05; //filter out all items with a margin less than 5%
+            MinMargin = 0.10; //filter out all items with a margin less than 10%
+            BrokerRate = 0.03; // 3%
+            TaxRate = 0.03; // 3%
+
 
         }
         public static EMA Instance
@@ -113,17 +122,15 @@ namespace EMA_WPF
         }
 
 
-        public static EveSearch Search(string item, List<string> categories)
+        public static Eve.Search Search(string item, List<string> categories)
         {
             EMA ema = EMA.Instance;
+            Eve eve = Eve.Instance;
 
-            ApiResponse<GetSearchOk> response = ema.SearchApi.GetSearchWithHttpInfo(categories, item);
+            //ApiResponse<GetSearchOk> response = eve.SearchApi.GetSearchWithHttpInfo(categories, item);
 
-            EveSearch search = new EveSearch
-            {
-                Station = response.Data.Station
-            };
-
+            Eve.Search search = new Eve.Search(item, categories);
+ 
             return search;
         }
 
@@ -449,7 +456,11 @@ namespace EMA_WPF
                 }
             }
             if (item.Sell_price == Double.MaxValue) item.Sell_price = 0;
-            item.Margin = ((item.Sell_price-item.Purchase_price)/item.Purchase_price);
+            //double correctedPurchasePrice = item.Purchase_price * (1 + BrokerRate);
+            double correctedPurchasePrice = item.Purchase_price;
+            double correctedSellPrice = item.Sell_price * (1 + TaxRate + BrokerRate);
+            item.AbsoluteMargin = correctedSellPrice - correctedPurchasePrice;
+            item.Margin = item.AbsoluteMargin / correctedPurchasePrice;
 
             if (item.Margin < MinMargin && item.Margin > -1) return null;
 
@@ -557,168 +568,187 @@ namespace EMA_WPF
             return emaHistory;
         }
 
+        public class EMAStation
+        {
+            public int Station_id { get; set; }
+            public string Station_name { get; set; }
+            public int Region_id { get; set; }
+            public string Region_name { get; set; }
+        }
+
+        public class Station
+        // a station with its id and name
+        {
+            private int stationId;
+            private string stationName;
+
+            public int Id { get => stationId; set => stationId = value; }
+            public string Name { get => stationName; set => stationName = value; }
+
+            Station(int id)
+            {
+
+            }
+        }
+
+        public class EMASellItem
+        {
+            private bool isSelected;
+            private int type_id;
+            private string name;
+            private double purchase_price;
+            private int purchase_volume;
+            private double sell_price;
+            private int sell_volume;
+            private double margin;
+            private double absoluteMargin;
+            private int[] competition;
+            private EMAHistory purchaseHistory;
+            private EMAHistory sellHistory;
+
+            public EMASellItem()
+            {
+                IsSelected = false;
+                Type_id = 0;
+                Name = null;
+                Purchase_price = Double.MaxValue;
+                Purchase_volume = 0;
+                Sell_price = Double.MaxValue;
+                Sell_volume = 0;
+                Margin = 0;
+                PurchaseHistory = null;
+                SellHistory = null;
+                Competition = new int[] { 0, 0, 0, 0, 0 };  //# of competitors in 1h, 3h, 1d, 3d, all
+            }
+
+            public bool IsSelected { get => isSelected; set => isSelected = value; }
+            public int Type_id { get => type_id; set => type_id = value; }
+            public string Name { get => name; set => name = value; }
+            public double Purchase_price { get => purchase_price; set => purchase_price = value; }
+            public int Purchase_volume { get => purchase_volume; set => purchase_volume = value; }
+            public double Sell_price { get => sell_price; set => sell_price = value; }
+            public int Sell_volume { get => sell_volume; set => sell_volume = value; }
+            public double Margin { get => margin; set => margin = value; }
+            public double AbsoluteMargin { get => absoluteMargin; set => absoluteMargin = value; }
+            public int[] Competition { get => competition; set => competition = value; }
+            public EMAHistory PurchaseHistory { get => purchaseHistory; set => purchaseHistory = value; }
+            public EMAHistory SellHistory { get => sellHistory; set => sellHistory = value; }
+        }
+
+        public class EMAProgressInfo
+        {
+            private bool _isNewItem;
+            private string _message;
+            private EMASellItem _item;
+
+            public EMAProgressInfo(EMASellItem item, bool isNewItem, string message)
+            {
+                this.IsNewItem = isNewItem;
+                this.Message = message;
+                this.Item = item;
+
+            }
+            public EMAProgressInfo(string message)
+            {
+                this.Item = null;
+                this.IsNewItem = false;
+                this.Message = message;
+            }
+
+            public EMASellItem Item { get => _item; set => _item = value; }
+            public bool IsNewItem { get => _isNewItem; set => _isNewItem = value; }
+            public string Message { get => _message; set => _message = value; }
+        }
+
+        public class EMAHistoryItem
+        {
+            private DateTime date;
+            private double sellPrice;
+            private double buyPrice;
+            private long sellVolume;
+            private long buyVolume;
+
+            public EMAHistoryItem(DateTime? newDate, double? lowPrice, double? highPrice, double? averagePrice, long? dayVolume)
+            {
+                Date = (DateTime)newDate;
+
+                SellPrice = 0;
+                BuyPrice = 0;
+                SellVolume = 0;
+                BuyVolume = 0;
+
+                if (dayVolume > 0)
+                {
+                    if (highPrice != lowPrice)
+                    {
+                        double priceRange = (double)highPrice - (double)lowPrice;
+                        SellPrice = (double)highPrice;
+                        BuyPrice = (double)lowPrice;
+                        SellVolume = (long)(dayVolume * (double)((averagePrice - lowPrice) / priceRange));
+                        BuyVolume = (long)dayVolume - SellVolume;
+                    }
+                    else
+                    {
+                        BuyVolume = (long)dayVolume;
+                        BuyPrice = (double)lowPrice;
+                    }
+                }
+            }
+
+            public DateTime Date { get => date; set => date = value; }
+            public double SellPrice { get => sellPrice; set => sellPrice = value; }
+            public double BuyPrice { get => buyPrice; set => buyPrice = value; }
+            public long SellVolume { get => sellVolume; set => sellVolume = value; }
+            public long BuyVolume { get => buyVolume; set => buyVolume = value; }
+
+        }
+
+        public class EMAHistory
+        {
+            private List<EMAHistoryItem> historyItems;
+            private Dictionary<int, double> weightedSellPrices;
+            private Dictionary<int, long> sellVolumes;
+
+            public List<EMAHistoryItem> HistoryItems { get => historyItems; set => historyItems = value; }
+            public Dictionary<int, double> WeightedSellPrices { get => weightedSellPrices; set => weightedSellPrices = value; }
+            public Dictionary<int, long> SellVolumes { get => sellVolumes; set => sellVolumes = value; }
+
+            public EMAHistory()
+            {
+                HistoryItems = null;
+                WeightedSellPrices = new Dictionary<int, double>();
+                SellVolumes = new Dictionary<int, long>();
+            }
+
+            public EMAHistory(List<EMAHistoryItem> historyitemList) : this() => HistoryItems = historyitemList;
+
+            public void WeightedSellPriceandVolumes(int timespan)
+            {
+                double weightedSellPrice = 0;
+                long volume = 0;
+
+                foreach (EMAHistoryItem historyItem in HistoryItems)
+                {
+                    TimeSpan itemAge = historyItem.Date - DateTime.Now;
+                    if (itemAge.Days < timespan)
+                    {
+                        volume += historyItem.SellVolume;
+                        weightedSellPrice += historyItem.SellPrice * historyItem.SellVolume;
+
+                    }
+                }
+                weightedSellPrice /= volume;
+                SellVolumes.Add(timespan, volume);
+                WeightedSellPrices.Add(timespan, weightedSellPrice);
+            }
+
+
+        }
+
+
 
     } /* class EMA */
 
 
-    public class EMAStation
-    {
-        public int Station_id { get; set; }
-        public string Station_name { get; set; }
-        public int Region_id { get; set; }
-        public string Region_name { get; set; }
-    }
-
-    public class EMASellItem
-    {
-        private bool isSelected;
-        private int type_id;
-        private string name;
-        private double purchase_price;
-        private int purchase_volume;
-        private double sell_price;
-        private int sell_volume;
-        private double margin;
-        private int[] competition;
-        private EMAHistory purchaseHistory;
-        private EMAHistory sellHistory;
-
-        public EMASellItem()
-        {
-            IsSelected = false;
-            Type_id = 0;
-            Name = null;
-            Purchase_price = Double.MaxValue;
-            Purchase_volume = 0;
-            Sell_price = Double.MaxValue;
-            Sell_volume = 0;
-            Margin = 0;
-            PurchaseHistory = null;
-            SellHistory = null;
-            Competition = new int[] { 0, 0, 0, 0, 0 };  //# of competitors in 1h, 3h, 1d, 3d, all
-        }
-
-        public bool IsSelected { get => isSelected; set => isSelected = value; }
-        public int Type_id { get => type_id; set => type_id = value; }
-        public string Name { get => name; set => name = value; }
-        public double Purchase_price { get => purchase_price; set => purchase_price = value; }
-        public int Purchase_volume { get => purchase_volume; set => purchase_volume = value; }
-        public double Sell_price { get => sell_price; set => sell_price = value; }
-        public int Sell_volume { get => sell_volume; set => sell_volume = value; }
-        public double Margin { get => margin; set => margin = value; }
-        public int[] Competition { get => competition; set => competition = value; }
-        public EMAHistory PurchaseHistory { get => purchaseHistory; set => purchaseHistory = value; }
-        public EMAHistory SellHistory { get => sellHistory; set => sellHistory = value; }
-    }
-
-    public class EMAProgressInfo
-    {
-        private bool _isNewItem;
-        private string _message;
-        private EMASellItem _item;
-
-        public EMAProgressInfo(EMASellItem item,bool isNewItem, string message)
-        {
-            this.IsNewItem = isNewItem;
-            this.Message = message;
-            this.Item = item;
-
-        }
-        public EMAProgressInfo(string message)
-        {
-            this.Item = null;
-            this.IsNewItem = false;
-            this.Message = message;
-        }
-
-        public EMASellItem Item { get => _item; set => _item = value; }
-        public bool IsNewItem { get => _isNewItem; set => _isNewItem = value; }
-        public string Message { get => _message; set => _message = value; }
-    }
-
-    public class EMAHistoryItem
-    {
-        private DateTime date;
-        private double sellPrice;
-        private double buyPrice;
-        private long sellVolume;
-        private long buyVolume;
-
-        public EMAHistoryItem(DateTime? newDate, double? lowPrice, double? highPrice, double? averagePrice, long? dayVolume )
-        {
-            Date = (DateTime) newDate;
-
-            SellPrice = 0;
-            BuyPrice = 0;
-            SellVolume = 0;
-            BuyVolume = 0;
-
-            if (dayVolume > 0)
-            {
-                if (highPrice == lowPrice)
-                {
-                    SellPrice = (double)highPrice;
-                    SellVolume = (long)dayVolume;
-                }
-                else
-                {
-                    double priceRange = (double)highPrice - (double)lowPrice;
-                    SellPrice = (double)highPrice;
-                    BuyPrice = (double)lowPrice;
-                    SellVolume = (long)(dayVolume * (double)((averagePrice - lowPrice) / priceRange));
-                    BuyVolume = (long)dayVolume - SellVolume;
-                }
-            }
-        }
-
-        public DateTime Date { get => date; set => date = value; }
-        public double SellPrice { get => sellPrice; set => sellPrice = value; }
-        public double BuyPrice { get => buyPrice; set => buyPrice = value; }
-        public long SellVolume { get => sellVolume; set => sellVolume = value; }
-        public long BuyVolume { get => buyVolume; set => buyVolume = value; }
-
-    }
-
-    public class EMAHistory
-    {
-        private List<EMAHistoryItem> historyItems;
-        private Dictionary<int, double> weightedSellPrices;
-        private Dictionary<int, long> sellVolumes;
-
-        public List<EMAHistoryItem> HistoryItems { get => historyItems; set => historyItems = value; }
-        public Dictionary<int, double> WeightedSellPrices { get => weightedSellPrices; set => weightedSellPrices = value; }
-        public Dictionary<int, long> SellVolumes { get => sellVolumes; set => sellVolumes = value; }
-
-        public EMAHistory()
-        {
-            HistoryItems = null;
-            WeightedSellPrices = new Dictionary<int, double>();
-            SellVolumes = new Dictionary<int, long>();
-        }
-
-        public EMAHistory(List<EMAHistoryItem> historyitemList) : this() => HistoryItems = historyitemList;
-
-        public void WeightedSellPriceandVolumes(int timespan)
-        {
-            double weightedSellPrice = 0;
-            long volume = 0;
-
-            foreach (EMAHistoryItem historyItem in HistoryItems)
-            {
-                TimeSpan itemAge = historyItem.Date - DateTime.Now; 
-                if (itemAge.Days < timespan)
-                {
-                    volume += historyItem.SellVolume;
-                    weightedSellPrice += historyItem.SellPrice * historyItem.SellVolume;
-
-                }
-            }
-            weightedSellPrice /= volume;
-            SellVolumes.Add(timespan, volume);
-            WeightedSellPrices.Add(timespan, weightedSellPrice);
-        }
-
-
-    }
 
 }

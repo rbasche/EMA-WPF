@@ -25,7 +25,7 @@ namespace EMA_WPF
     /// </summary>
     public partial class StationGrid : UserControl
     {
-        private EveSearch stationSearch;
+        private Eve.Search stationSearch;
         private List<PostUniverseNames200Ok> stationNameList;
         private EMA ema;
 
@@ -67,7 +67,7 @@ namespace EMA_WPF
 
         private void StationListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            EMAStation station;
+            EMA.EMAStation station;
             
             if (stationListBox.SelectedItem != null)
             {

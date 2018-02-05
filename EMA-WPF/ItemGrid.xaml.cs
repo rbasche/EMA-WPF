@@ -26,14 +26,14 @@ namespace EMA_WPF
     public partial class ItemGrid : UserControl
     {
         private EMA ema;
-        private ObservableCollection<EMASellItem> mySellItems;
-        private ObservableCollection<EMAHistoryItem> myHistory;
+        private ObservableCollection<EMA.EMASellItem> mySellItems;
+        private ObservableCollection<EMA.EMAHistoryItem> myHistory;
 
         public ItemGrid()
         {
             InitializeComponent();
             ema = EMA.Instance;
-            mySellItems = new ObservableCollection<EMASellItem>();
+            mySellItems = new ObservableCollection<EMA.EMASellItem>();
             historyButton.IsEnabled = false;
 
         }
@@ -45,7 +45,7 @@ namespace EMA_WPF
             mySellItems.Clear();
             itemListView.ItemsSource = mySellItems;
 
-            Progress<EMAProgressInfo> emaProgressHandler = new Progress<EMAProgressInfo>(info =>
+            Progress<EMA.EMAProgressInfo> emaProgressHandler = new Progress<EMA.EMAProgressInfo>(info =>
             {
                 this.statusTextBlock.Text = info.Message;
                 if (info.IsNewItem)
@@ -53,7 +53,7 @@ namespace EMA_WPF
                     mySellItems.Add(info.Item);
                 }
             });
-            ema.Progress = emaProgressHandler as IProgress<EMAProgressInfo>;
+            ema.Progress = emaProgressHandler as IProgress<EMA.EMAProgressInfo>;
 
             this.statusTextBlock.Text = "starting: Get Items";
             string message = await Task<TimeSpan>.Run( () =>
@@ -88,7 +88,7 @@ namespace EMA_WPF
                 }
             });
             
-            foreach (EMASellItem item in ema.SellItems)
+            foreach (EMA.EMASellItem item in ema.SellItems)
             {
                 if (!mySellItems.Contains(item)) mySellItems.Add(item);
             }
@@ -124,8 +124,8 @@ namespace EMA_WPF
             ema.GetHistory();
             //mySellItems.Clear();
 
-            List<EMASellItem> selectedItems = ema.SellItems.FindAll(ema.FindSelectedItemsHelper);
-            foreach (EMASellItem item in selectedItems)
+            List<EMA.EMASellItem> selectedItems = ema.SellItems.FindAll(ema.FindSelectedItemsHelper);
+            foreach (EMA.EMASellItem item in selectedItems)
             {
                 int index = mySellItems.IndexOf(item);
 
@@ -144,12 +144,12 @@ namespace EMA_WPF
 
         private void CheckBox_Click(object sender, RoutedEventArgs e)
         {
-            EMASellItem item = (EMASellItem)((CheckBox)sender).DataContext;
+            EMA.EMASellItem item = (EMA.EMASellItem)((CheckBox)sender).DataContext;
             item.IsSelected = true;
-            EMASellItem originItem = ema.SellItems.Find(FindSellItemHelper);
+            EMA.EMASellItem originItem = ema.SellItems.Find(FindSellItemHelper);
             originItem.IsSelected = true;
 
-            bool FindSellItemHelper(EMASellItem sellItem)
+            bool FindSellItemHelper(EMA.EMASellItem sellItem)
             {
                 return sellItem.Type_id == item.Type_id;
             }
