@@ -11,6 +11,7 @@ using IO.Swagger.Api;
 using IO.Swagger.Model;
 using IO.Swagger.Client;
 using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace EMA_WPF
 {
@@ -37,7 +38,7 @@ namespace EMA_WPF
             }
         }
     }
-    public sealed class EMA
+    public sealed class EMA : INotifyPropertyChanged
     {
 
         private static readonly EMA instance = new EMA();
@@ -85,6 +86,9 @@ namespace EMA_WPF
         private IProgress<EMAProgressInfo> progress;
         public IProgress<EMAProgressInfo> Progress { get => progress; set => progress = value; }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+
+
         static EMA()
         {
         }
@@ -118,6 +122,14 @@ namespace EMA_WPF
             get
             {
                 return instance;
+            }
+        }
+
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
             }
         }
 
@@ -637,16 +649,18 @@ namespace EMA_WPF
 
         public class EMAProgressInfo
         {
-            private bool _isNewItem;
-            private string _message;
-            private EMASellItem _item;
+            private bool isNewItem;
+            private string message;
+            private EMASellItem item;
+            public EMASellItem Item { get => item; set => item = value; }
+            public bool IsNewItem { get => isNewItem; set => isNewItem = value; }
+            public string Message { get => message; set => message = value; }
 
             public EMAProgressInfo(EMASellItem item, bool isNewItem, string message)
             {
-                this.IsNewItem = isNewItem;
-                this.Message = message;
-                this.Item = item;
-
+                IsNewItem = isNewItem;
+                Message = message;
+                Item = item;
             }
             public EMAProgressInfo(string message)
             {
@@ -654,10 +668,6 @@ namespace EMA_WPF
                 this.IsNewItem = false;
                 this.Message = message;
             }
-
-            public EMASellItem Item { get => _item; set => _item = value; }
-            public bool IsNewItem { get => _isNewItem; set => _isNewItem = value; }
-            public string Message { get => _message; set => _message = value; }
         }
 
         public class EMAHistoryItem
