@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EMA-WPF", "EMA-WPF\EMA-WPF.csproj", "{CBE12A76-6A9F-45CB-8EAF-59F49DFB439F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EMA-MVVM", "EMA-MVVM\EMA-MVVM.csproj", "{8C56460E-BED2-4F72-BEAD-C3F0AB9C745E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{CBE12A76-6A9F-45CB-8EAF-59F49DFB439F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBE12A76-6A9F-45CB-8EAF-59F49DFB439F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBE12A76-6A9F-45CB-8EAF-59F49DFB439F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C56460E-BED2-4F72-BEAD-C3F0AB9C745E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C56460E-BED2-4F72-BEAD-C3F0AB9C745E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C56460E-BED2-4F72-BEAD-C3F0AB9C745E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C56460E-BED2-4F72-BEAD-C3F0AB9C745E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
